@@ -98,10 +98,25 @@
     @keyframes blinker {
       50% { opacity: 0; }
     }
+
+    audio {
+        bottom: 0; 
+  position: fixed; 
+  right: 0; 
+    }
+
+    audio::-webkit-media-controls-play-button,
+     audio::-webkit-media-controls-panel {
+     background-color: #ddd;
+     color: #ddd;
+     }
   </style>
 </head>
 <body>
+
   <div class="crt">
+
+
     <div class="flip-clock" id="timer">
       <span class="digit" id="hrs">02</span><span class="separator">:</span>
       <span class="digit" id="mins">00</span><span class="separator">:</span>
@@ -112,6 +127,14 @@
     <button onclick="submitAnswer()">SUBMIT</button>
     <div id="result"></div>
   </div>
+
+
+  <div style="display:flex; width=100%">
+     <audio controls>
+  <source src="audio.wav" type="audio/wav">
+</audio>
+
+</div>
 
 <script>
 const totalTime = 7200; // 2 hours
@@ -150,7 +173,7 @@ function mantisArt() {
            .-" //_.-" \\_."              ||      \\\\     
         _."   //" \\__,"                 ||       \\\\     
       ."   __//>.-"                     ||        "----     
-     "---"" //                           \\           mozz
+     "---"" //                           \\           
 `;
   return asciiArt;
 }
@@ -165,16 +188,33 @@ function startTimer() {
   timerInterval = setInterval(updateClock, 1000);
   updateClock();
 }
-
+function typeWriterEffect(text, callback) {
+  let i = 0;
+  document.getElementById('result').innerHTML = "";
+  function type() {
+    if (i < text.length) {
+      document.getElementById('result').innerHTML += text.charAt(i);
+      i++;
+      setTimeout(type, 50);
+    } else {
+      document.getElementById('result').innerHTML +=
+        "<span class=\"blink\">Tick tock. Tick tock.</span>\n" + mantisArt();
+      if (callback) callback();
+    }
+  }
+  type();
+}
 function updateClock() {
   const now = Math.floor(Date.now() / 1000);
   let timeLeft = endTime - now;
   if (timeLeft <= 0) {
     clearInterval(timerInterval);
     timerActive = false;
-    document.getElementById('result').innerHTML =
-"YOU HAVE LOST MY NEW FRIEND. SHE HAS NOW DIED BECAUSE OF YOU. TYPE \"MANTIS\" TO PLAY AGAIN." + mantisArt();
-    localStorage.removeItem("killer_end_time");
+    taunt =
+"YOU HAVE LOST MY NEW FRIEND. \nSHE HAS NOW DIED BECAUSE OF YOU. \nTYPE \"MANTIS\" TO PLAY AGAIN." + mantisArt();
+    typeWriterEffect(taunt, () => {});
+    
+localStorage.removeItem("killer_end_time");
     return;
   }
   let h = Math.floor(timeLeft / 3600),
@@ -196,12 +236,12 @@ function submitAnswer() {
   }
   if (!timerActive) return;
 
-  if (workplace.includes(ans)) {
+  if (workplace.includes(ans.toLowerCase())) {
     clearInterval(timerInterval);
     timerActive = false;
     localStorage.removeItem("killer_end_time");
-    document.getElementById('result').innerHTML =
-"WELL DONE. YOU’VE FOUND ME. WILL YOU REPORT ME TO THE METRO POLICE? GOODBYE FOR NOW, WHOEVER YOU ARE." + mantisArt();
+    const taunt = "WELL DONE. YOU’VE FOUND ME. SHE'LL LIVE ANOTHER DAY.\nWILL YOU REPORT ME TO THE METRO POLICE?\nGOODBYE FOR NOW, WHOEVER YOU ARE.";
+    typeWriterEffect(taunt, () => {});
   } else if (profession.includes(ans)) {
     endTime += 900;
     localStorage.setItem("killer_end_time", endTime);
@@ -209,8 +249,8 @@ function submitAnswer() {
     document.getElementById('result').textContent="CORRECT PROFESSION! +15 MIN BONUS.";
   } else {
     const taunt = "INCORRECT. THE CLOCK TICKS...";
-    document.getElementById('result').innerHTML = `<span class="blink">${taunt}</span>
-` + mantisArt();
+    typeWriterEffect(taunt, () => {});
+
   }
 }
 
