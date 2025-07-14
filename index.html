@@ -146,7 +146,6 @@
 
   <img id="deathImage" src="IMG_2962.jpeg" alt="Game Over Image" />
 
-  <!-- Background Music -->
   <audio id="bgMusic" src="Anticipation(Dark chiptune Free to use).mp3" loop></audio>
   <audio id="extraAudio" src="audio.wav"></audio>
 
@@ -164,10 +163,11 @@ function sendEmail(eventType) {
   );
 }
 
-const totalTime = 5400; // 1 hour 30 minutes
+const totalTime = 5400; // 1 hour 30 min
 let timerInterval, endTime;
 let guessesLeft = 3, professionGuessed = false, gameOver = false;
 let audioPlaying = false;
+let photoTimeout;
 
 const workplace = ["kyoto uni", "kyoto university", "kyotou"];
 const profession = ["entomologist", "professor", "teacher"];
@@ -178,7 +178,7 @@ const clueEl = document.getElementById('clue');
 const deathImage = document.getElementById('deathImage');
 const bgMusic = document.getElementById('bgMusic');
 const extraAudio = document.getElementById('extraAudio');
-bgMusic.volume = 0.2; // Play quietly
+bgMusic.volume = 0.2;
 
 function toggleAudio() {
   if (audioPlaying) {
@@ -189,34 +189,6 @@ function toggleAudio() {
     document.querySelector("#audioPlayer button").innerText = "⏸ PAUSE AUDIO";
   }
   audioPlaying = !audioPlaying;
-}
-
-function mantisArt() {
-  return `
-                                          _                _     
-                                           '-.          ,-'     
-                                              '.      ,'     
-                                                \\    /     
-                                                _|__|_     
-                                               (,\\--/,,)     
-                                               /\\Y  Y/     
-                                             ."  \`><'     
-                                           ."    /|     
-                                          /  /  // .-"'y".     
-                                       _."  /  // / -//-//     
-                                    _."l   /| || / ,// //     
-                                 _."  / ',/ | |," ,// //     
-                     .-.      _."   ."  ."  | \`  ,//-//     
-                    //'.'. _."   _."/ |/    "._."// //     
-                   //  _\\ \\  _,-" _|  Y          ^  ^     
-                  //_."  \\'\\" /  / \\  \\._     
-                 //"    _.\\ \\|  /   "----|====-.     
-              _.//   _." \\_\\___/        ||     \\\\     
-           .-" //_.-" \\_."              ||      \\\\     
-        _."   //" \\__,"                 ||       \\\\     
-      ."   __//>.-"                     ||        "----     
-     "---"" //                           \\               
-  `;
 }
 
 function typeWriterEffect(text, callback) {
@@ -267,6 +239,10 @@ function submitAnswer() {
   if (ans === "mantis" && gameOver) {
     resetGame();
     sendEmail("RESTARTED");
+    deathImage.style.display = "block";
+    photoTimeout = setTimeout(() => {
+      deathImage.style.display = "none";
+    }, 60000); // 1 minute
     startTimer();
     return;
   }
@@ -275,7 +251,7 @@ function submitAnswer() {
 
   if (workplace.includes(ans)) {
     clearInterval(timerInterval);
-    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.\nI’D STILL LIKE TO FIND YOU ONE DAY.\nWILL YOU REPORT ME TO THE METRO POLICE NOW?");
+    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.\nI’D STILL LIKE TO FIND YOU ONE DAY.\nWILL YOU REPORT ME TO THE METRO POLICE NOW?\n" + mantisArt());
     gameOver = true;
   } else if (profession.includes(ans)) {
     if (!professionGuessed) {
@@ -294,7 +270,6 @@ function submitAnswer() {
     }
     if (guessesLeft <= 0) {
       endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nTYPE \"MANTIS\" TO PLAY AGAIN.");
-      deathImage.style.display = "block"; // Show photo only on loss
     } else {
       let warning = (guessesLeft === 1)
         ? "This is your last chance. Can you bear the responsibility of her death?\n\n<span class='blink'>TICK TOCK. TICK TOCK.</span>"
@@ -321,7 +296,6 @@ function resetGame() {
   deathImage.style.display = "none";
 }
 
-// Start background music and send email on page load
 window.addEventListener('load', () => {
   resetGame();
   startTimer();
