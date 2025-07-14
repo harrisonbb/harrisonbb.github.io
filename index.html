@@ -3,29 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <title>Cat and Mouse</title>
+  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
   <style>
     html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background: #000;
-      color: #00cc66;
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      background: #000; color: #00cc66;
       font-family: "Courier New", Courier, monospace;
       overflow: hidden;
     }
     body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      display: flex; justify-content: center; align-items: center;
       text-align: center;
       filter: contrast(1.1) brightness(0.9);
       text-shadow: 0 0 3px #00cc66, 0 0 6px #003300;
     }
     body::before {
-      content: "";
-      position: fixed;
-      top: 0; left: 0;
+      content: ""; position: fixed; top: 0; left: 0;
       width: 100%; height: 100%;
       background: repeating-linear-gradient(
         0deg,
@@ -34,8 +28,7 @@
         transparent 2px,
         transparent 4px
       );
-      z-index: 999;
-      pointer-events: none;
+      z-index: 999; pointer-events: none;
       animation: flicker 0.2s infinite;
     }
     @keyframes flicker {
@@ -52,34 +45,25 @@
       max-width: 800px;
       height: auto;
       overflow: auto;
-      transform: scale(1);
       position: relative;
     }
     .flip-clock {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      font-size: 42px;
-      margin-bottom: 15px;
+      display: flex; justify-content: center; gap: 8px;
+      font-size: 42px; margin-bottom: 15px;
     }
     .digit, .separator {
-      border: 1px solid #00cc66;
-      padding: 8px 12px;
+      border: 1px solid #00cc66; padding: 8px 12px;
       box-shadow: 0 0 5px #00cc66;
     }
     input, button {
-      background: #000;
-      color: #00cc66;
+      background: #000; color: #00cc66;
       border: 1px solid #00cc66;
-      padding: 6px 12px;
-      margin: 8px;
+      padding: 6px 12px; margin: 8px;
       font-size: 16px;
       text-shadow: 0 0 3px #00cc66;
     }
     button:hover {
-      background: #00cc66;
-      color: #000;
-      cursor: pointer;
+      background: #00cc66; color: #000; cursor: pointer;
     }
     #result {
       margin-top: 12px;
@@ -88,6 +72,28 @@
       line-height: 1.2;
       overflow-wrap: break-word;
     }
+    #mantisArt {
+      margin-top: 10px;
+      font-family: monospace;
+      white-space: pre;
+      color: #00cc66;
+      display: none;
+    }
+    #clue {
+      margin-top: 15px;
+      color: #00cc66;
+      display: none;
+      font-style: italic;
+    }
+    #deathImage {
+      display: none;
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 90vw; max-height: 90vh;
+      border: 2px solid #00cc66;
+      box-shadow: 0 0 15px #00cc66;
+      z-index: 10000;
+    }
     .blink {
       color: #ff4444;
       animation: blinker 1s step-start infinite;
@@ -95,56 +101,7 @@
     @keyframes blinker {
       50% { opacity: 0; }
     }
-    #clue {
-      margin-top: 20px;
-      color: #00cc66;
-      font-family: "Courier New", Courier, monospace;
-      display: none;
-    }
-    #deathImage {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      max-width: 90vw;
-      max-height: 90vh;
-      border: 2px solid #00cc66;
-      box-shadow: 0 0 15px #00cc66;
-      animation: glitch 1.2s infinite alternate;
-      z-index: 10000;
-      cursor: pointer;
-    }
-    #audioPlayer {
-      position: fixed;
-      bottom: 15px;
-      right: 15px;
-      background: #000;
-      border: 1px solid #00cc66;
-      color: #00cc66;
-      padding: 6px 10px;
-      border-radius: 5px;
-      box-shadow: 0 0 8px #00cc66;
-      font-family: "Courier New", Courier, monospace;
-    }
-    #audioPlayer button {
-      background: #000;
-      color: #00cc66;
-      border: 1px solid #00cc66;
-      padding: 3px 8px;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    #audioPlayer button:hover {
-      background: #00cc66;
-      color: #000;
-    }
   </style>
-  <!-- ✅ Include EmailJS SDK -->
-  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
-  <script>
-    emailjs.init("1RS7AErKfv1LfaJ-k"); // Your PUBLIC KEY
-  </script>
 </head>
 <body>
 
@@ -158,43 +115,42 @@
     <input id="userAnswer" type="text" placeholder="> Type your answer..." />
     <button onclick="submitAnswer()">SUBMIT</button>
     <div id="result"></div>
+    <div id="mantisArt"></div>
     <div id="clue"></div>
   </div>
 
-  <div id="audioPlayer">
-    <button onclick="toggleAudio()">▶ PLAY AUDIO</button>
-  </div>
+  <img id="deathImage" src="IMG_2962.jpeg" alt="Game Over Image" />
 
-  <img id="deathImage" src="" alt="Game Over Image" onclick="hideDeathImage()" />
+  <!-- Background Music -->
+  <audio id="bgMusic" src="Anticipation(Dark chiptune Free to use).mp3" loop></audio>
 
 <script>
-const totalTime = 5400; // 1 hour 30 min
+emailjs.init("1RS7AErKfv1LfaJ-k"); // Your Public Key
+
+function sendEmail(eventType) {
+  emailjs.send("default_service", "template_03vddn5", {
+    to_name: "Harrison",
+    message: `A player ${eventType} a new game at ${new Date().toLocaleString()}`,
+    from_name: "The Mantis Game"
+  }).then(
+    () => console.log("📨 Email sent successfully."),
+    (err) => console.error("❌ Email failed:", err)
+  );
+}
+
+const totalTime = 5400; // 1 hour 30 minutes
 let timerInterval, endTime;
-let guessesLeft = 3, professionGuessed = false, gameOver = false, audioPlaying = false;
+let guessesLeft = 3, professionGuessed = false, gameOver = false;
 
 const workplace = ["kyoto uni", "kyoto university", "kyotou"];
 const profession = ["entomologist", "professor", "teacher"];
-const audio = new Audio("audio.wav");
-
-function toggleAudio() {
-  if (audioPlaying) {
-    audio.pause();
-    document.querySelector("#audioPlayer button").innerText = "▶ PLAY AUDIO";
-  } else {
-    audio.play();
-    document.querySelector("#audioPlayer button").innerText = "▶ PAUSE AUDIO";
-  }
-  audioPlaying = !audioPlaying;
-}
-
-const hrsEl = document.getElementById('hrs'),
-      minsEl = document.getElementById('mins'),
-      secsEl = document.getElementById('secs'),
-      guessesEl = document.getElementById('guesses'),
-      clueEl = document.getElementById('clue'),
-      resultEl = document.getElementById('result'),
-      deathImage = document.getElementById('deathImage'),
-      inputField = document.getElementById('userAnswer');
+const resultEl = document.getElementById('result');
+const guessesEl = document.getElementById('guesses');
+const mantisEl = document.getElementById('mantisArt');
+const clueEl = document.getElementById('clue');
+const deathImage = document.getElementById('deathImage');
+const bgMusic = document.getElementById('bgMusic');
+bgMusic.volume = 0.2; // Play quietly
 
 function mantisArt() {
   return `
@@ -225,43 +181,22 @@ function mantisArt() {
 }
 
 function typeWriterEffect(text, callback) {
-  let i = 0;
   resultEl.innerHTML = "";
+  let i = 0;
   function type() {
     if (i < text.length) {
       resultEl.innerHTML += text.charAt(i);
       i++;
-      setTimeout(type, 70);
+      setTimeout(type, 50);
     } else {
-      resultEl.innerHTML += `<br><span class="blink">TICK TOCK. TICK TOCK.</span>`;
       if (callback) callback();
     }
   }
   type();
 }
 
-function sendEmailNotification() {
-  emailjs.send("service_xxxxxx", "template_03vddn5", {
-    message: "A new player has started the Cat and Mouse game."
-  }).then(() => {
-    console.log("✅ Email sent to Harrisonbruhn@gmail.com");
-  }).catch(err => {
-    console.error("❌ Email error:", err);
-  });
-}
-
-function resetGame() {
-  endTime = Math.floor(Date.now() / 1000) + totalTime;
-  guessesLeft = 3;
-  professionGuessed = false;
-  gameOver = false;
-  inputField.disabled = false;
-  inputField.value = "";
-  deathImage.style.display = "none";
-}
-
 function startTimer() {
-  sendEmailNotification(); // ✅ Email sent when game starts
+  endTime = Math.floor(Date.now() / 1000) + totalTime;
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(updateClock, 1000);
   updateClock();
@@ -271,31 +206,29 @@ function updateClock() {
   const now = Math.floor(Date.now() / 1000);
   let timeLeft = endTime - now;
 
-  if (timeLeft === 1800 && clueEl.innerHTML === "") {
+  if (timeLeft === 1800 && !gameOver) {
     clueEl.style.display = "block";
-    typeWriterEffect("Sometimes the answer is right in front of you...");
+    clueEl.textContent = "If you can guess my profession I’ll give you 15 minutes extra :)";
   }
 
   if (timeLeft <= 0 && !gameOver) {
-    endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\n\n" + mantisArt() + "\nTYPE \"MANTIS\" TO PLAY AGAIN.");
-  } else if (timeLeft > 0) {
-    hrsEl.textContent = String(Math.floor(timeLeft / 3600)).padStart(2, '0');
-    minsEl.textContent = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, '0');
-    secsEl.textContent = String(timeLeft % 60).padStart(2, '0');
+    endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nTYPE \"MANTIS\" TO PLAY AGAIN.");
+  } else {
+    let h = Math.floor(timeLeft / 3600);
+    let m = Math.floor((timeLeft % 3600) / 60);
+    let s = timeLeft % 60;
+    document.getElementById('hrs').textContent = String(h).padStart(2, '0');
+    document.getElementById('mins').textContent = String(m).padStart(2, '0');
+    document.getElementById('secs').textContent = String(s).padStart(2, '0');
   }
 }
 
 function submitAnswer() {
-  let ans = inputField.value.trim().toLowerCase();
+  const ans = document.getElementById('userAnswer').value.trim().toLowerCase();
   if (ans === "mantis" && gameOver) {
     resetGame();
+    sendEmail("RESTARTED");
     startTimer();
-    resultEl.innerText = "";
-    guessesEl.textContent = guessesLeft;
-    clueEl.style.display = "none";
-    return;
-  } else if (ans === "mantis" && !gameOver) {
-    typeWriterEffect("You can't restart while the game is active.");
     return;
   }
 
@@ -303,9 +236,8 @@ function submitAnswer() {
 
   if (workplace.includes(ans)) {
     clearInterval(timerInterval);
-    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.\nI’D STILL LIKE TO FIND YOU ONE DAY.\nWILL YOU REPORT ME TO THE METRO POLICE NOW?\n\n" + mantisArt());
+    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.\nI’D STILL LIKE TO FIND YOU ONE DAY.\nWILL YOU REPORT ME TO THE METRO POLICE NOW?");
     gameOver = true;
-    inputField.disabled = true;
   } else if (profession.includes(ans)) {
     if (!professionGuessed) {
       professionGuessed = true;
@@ -317,11 +249,16 @@ function submitAnswer() {
   } else {
     guessesLeft--;
     guessesEl.textContent = guessesLeft;
+    if (guessesLeft === 2) {
+      mantisEl.style.display = "block"; // Show mantis after first wrong guess
+      mantisEl.textContent = mantisArt();
+    }
     if (guessesLeft <= 0) {
-      endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\n\n" + mantisArt() + "\nTYPE \"MANTIS\" TO PLAY AGAIN.");
+      endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nTYPE \"MANTIS\" TO PLAY AGAIN.");
+      deathImage.style.display = "block"; // Show photo only on loss
     } else {
       let warning = (guessesLeft === 1)
-        ? "This is your last chance. Can you bear the responsibility of her death? Was it worth it?"
+        ? "This is your last chance. Can you bear the responsibility of her death?"
         : `INCORRECT. THE CLOCK TICKS... (${guessesLeft} guesses left)`;
       typeWriterEffect(warning);
     }
@@ -331,21 +268,29 @@ function submitAnswer() {
 function endGame(message) {
   clearInterval(timerInterval);
   gameOver = true;
-  inputField.disabled = true;
-  const photos = ["IMG_2962.jpeg", "IMG_2963.jpeg"];
-  const randomPhoto = photos[Math.floor(Math.random() * photos.length)];
-  deathImage.src = randomPhoto;
-  deathImage.style.display = "block";
   typeWriterEffect(message);
 }
 
-function hideDeathImage() {
+function resetGame() {
+  guessesLeft = 3;
+  professionGuessed = false;
+  gameOver = false;
+  document.getElementById('userAnswer').value = "";
+  resultEl.innerHTML = "";
+  mantisEl.style.display = "none";
+  clueEl.style.display = "none";
   deathImage.style.display = "none";
 }
 
+// Start background music and send email on page load
 window.addEventListener('load', () => {
   resetGame();
   startTimer();
+  sendEmail("STARTED");
+  bgMusic.play().catch(() => {
+    console.log("Autoplay blocked; will start on user click.");
+    document.body.addEventListener("click", () => bgMusic.play(), { once: true });
+  });
 });
 </script>
 </body>
