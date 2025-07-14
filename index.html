@@ -163,7 +163,7 @@ function sendEmail(eventType) {
   );
 }
 
-const totalTime = 5400; // 1 hour 30 min
+const totalTime = 5400; // 1 hour 30 minutes
 let timerInterval, endTime;
 let guessesLeft = 3, professionGuessed = false, gameOver = false;
 let audioPlaying = false;
@@ -191,15 +191,45 @@ function toggleAudio() {
   audioPlaying = !audioPlaying;
 }
 
+function mantisArt() {
+  return `
+                                          _                _     
+                                           '-.          ,-'     
+                                              '.      ,'     
+                                                \\    /     
+                                                _|__|_     
+                                               (,\\--/,,)     
+                                               /\\Y  Y/     
+                                             ."  \`><'     
+                                           ."    /|     
+                                          /  /  // .-"'y".     
+                                       _."  /  // / -//-//     
+                                    _."l   /| || / ,// //     
+                                 _."  / ',/ | |," ,// //     
+                     .-.      _."   ."  ."  | \`  ,//-//     
+                    //'.'. _."   _."/ |/    "._."// //     
+                   //  _\\ \\  _,-" _|  Y          ^  ^     
+                  //_."  \\'\\" /  / \\  \\._     
+                 //"    _.\\ \\|  /   "----|====-.     
+              _.//   _." \\_\\___/        ||     \\\\     
+           .-" //_.-" \\_."              ||      \\\\     
+        _."   //" \\__,"                 ||       \\\\     
+      ."   __//>.-"                     ||        "----     
+     "---"" //                           \\               
+  `;
+}
+
 function typeWriterEffect(text, callback) {
   resultEl.innerHTML = "";
+  let plainText = text.replace(/<[^>]+>/g, ''); // Strip HTML tags for typing
   let i = 0;
   function type() {
-    if (i < text.length) {
-      resultEl.innerHTML += text.charAt(i);
+    if (i < plainText.length) {
+      resultEl.innerHTML += plainText.charAt(i);
       i++;
       setTimeout(type, 50);
     } else {
+      resultEl.innerHTML += text.replace(plainText, ""); // Add back HTML tags
       if (callback) callback();
     }
   }
@@ -223,7 +253,7 @@ function updateClock() {
   }
 
   if (timeLeft <= 0 && !gameOver) {
-    endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nTYPE \"MANTIS\" TO PLAY AGAIN.");
+    endGame("YOU FAILED TO FIND ME IN TIME.<br>SHE HAS NOW DIED BECAUSE OF YOU.<br>TYPE \"MANTIS\" TO PLAY AGAIN.");
   } else {
     let h = Math.floor(timeLeft / 3600);
     let m = Math.floor((timeLeft % 3600) / 60);
@@ -251,7 +281,7 @@ function submitAnswer() {
 
   if (workplace.includes(ans)) {
     clearInterval(timerInterval);
-    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.\nI’D STILL LIKE TO FIND YOU ONE DAY.\nWILL YOU REPORT ME TO THE METRO POLICE NOW?\n" + mantisArt());
+    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.<br>I’D STILL LIKE TO FIND YOU ONE DAY.<br>WILL YOU REPORT ME TO THE METRO POLICE NOW?<br>" + mantisArt());
     gameOver = true;
   } else if (profession.includes(ans)) {
     if (!professionGuessed) {
@@ -269,11 +299,11 @@ function submitAnswer() {
       mantisEl.textContent = mantisArt();
     }
     if (guessesLeft <= 0) {
-      endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nTYPE \"MANTIS\" TO PLAY AGAIN.");
+      endGame("YOU FAILED TO FIND ME IN TIME.<br>SHE HAS NOW DIED BECAUSE OF YOU.<br>TYPE \"MANTIS\" TO PLAY AGAIN.");
     } else {
       let warning = (guessesLeft === 1)
-        ? "This is your last chance. Can you bear the responsibility of her death?\n\n<span class='blink'>TICK TOCK. TICK TOCK.</span>"
-        : `INCORRECT. THE CLOCK TICKS... (${guessesLeft} guesses left)\n\n<span class='blink'>TICK TOCK. TICK TOCK.</span>`;
+        ? "This is your last chance. Can you bear the responsibility of her death?<br><span class='blink'>TICK TOCK. TICK TOCK.</span>"
+        : `INCORRECT. THE CLOCK TICKS... (${guessesLeft} guesses left)<br><span class='blink'>TICK TOCK. TICK TOCK.</span>`;
       typeWriterEffect(warning);
     }
   }
