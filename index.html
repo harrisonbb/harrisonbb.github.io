@@ -84,17 +84,15 @@
     #result {
       margin-top: 12px;
       white-space: pre-wrap;
-      word-wrap: break-word;
+      font-size: 12px;
+      line-height: 1.2;
       overflow-wrap: break-word;
-      font-size: 14px;
-      line-height: 1.3;
     }
-    .blink {
-      animation: blinker 1s step-start infinite;
-      color: #ff4444;
-    }
-    @keyframes blinker {
-      50% { opacity: 0; }
+    #clue {
+      margin-top: 20px;
+      color: #00cc66;
+      font-family: "Courier New", Courier, monospace;
+      display: none;
     }
     #deathImage {
       display: none;
@@ -109,42 +107,6 @@
       animation: glitch 1.2s infinite alternate;
       z-index: 10000;
       cursor: pointer;
-    }
-    @keyframes glitch {
-      0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-      50% { opacity: 0.85; transform: translate(-50%, -50%) scale(1.02); }
-      100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    }
-    #audioPlayer {
-      position: fixed;
-      bottom: 15px;
-      right: 15px;
-      background: #000;
-      border: 1px solid #00cc66;
-      color: #00cc66;
-      padding: 8px;
-      border-radius: 5px;
-      box-shadow: 0 0 10px #00cc66;
-      z-index: 1000;
-      font-family: "Courier New", Courier, monospace;
-    }
-    #audioPlayer button {
-      background: #000;
-      border: 1px solid #00cc66;
-      color: #00cc66;
-      padding: 4px 8px;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    #audioPlayer button:hover {
-      background: #00cc66;
-      color: #000;
-    }
-    #clue {
-      margin-top: 20px;
-      color: #00cc66;
-      font-family: "Courier New", Courier, monospace;
-      display: none;
     }
   </style>
 </head>
@@ -165,49 +127,48 @@
 
   <img id="deathImage" src="" alt="Game Over Image" onclick="hideDeathImage()" />
 
-  <div id="audioPlayer">
-    <button onclick="toggleAudio()">▶ PLAY AUDIO</button>
-  </div>
-
 <script>
-const totalTime = 5400; // 1 hour 30 minutes
-let timerActive = false, timerInterval, endTime;
-let guessesLeft = 3, professionGuessed = false, gameOver = false, audioPlaying = false;
-const obf = atob("a3lvdG91O2t5b3RvIHVuaTtreW90byB1bml2ZXJzaXR5");
-const workplace = obf.split(";").map(x => x.trim().toLowerCase());
-const profObf = atob("ZW50b21vbG9naXN0O3Byb2Zlc3Nvcjt0ZWFjaGVy");
-const profession = profObf.split(";").map(x => x.trim().toLowerCase());
+const totalTime = 5400; // 1 hour 30 min
+let timerInterval, endTime;
+let guessesLeft = 3, professionGuessed = false, gameOver = false;
 
-const hrsEl = document.getElementById('hrs'), minsEl = document.getElementById('mins'),
-      secsEl = document.getElementById('secs'), guessesEl = document.getElementById('guesses'),
-      clueEl = document.getElementById('clue'), deathImage = document.getElementById('deathImage');
+const workplace = ["kyoto uni", "kyoto university", "kyotou"];
+const profession = ["entomologist", "professor", "teacher"];
 
-const audio = new Audio("audio.wav");
-function toggleAudio() {
-  if (audioPlaying) {
-    audio.pause();
-    document.querySelector("#audioPlayer button").innerText = "▶ PLAY AUDIO";
-  } else {
-    audio.play();
-    document.querySelector("#audioPlayer button").innerText = "⏸ PAUSE AUDIO";
-  }
-  audioPlaying = !audioPlaying;
+const hrsEl = document.getElementById('hrs'),
+      minsEl = document.getElementById('mins'),
+      secsEl = document.getElementById('secs'),
+      guessesEl = document.getElementById('guesses'),
+      clueEl = document.getElementById('clue'),
+      deathImage = document.getElementById('deathImage');
+
+function mantisArt() {
+  return `
+                                          _                _     
+                                           '-.          ,-'     
+                                              '.      ,'     
+                                                \\    /     
+                                                _|__|_     
+                                               (,\\--/,,)     
+                                               /\\Y  Y/     
+                                             ."  \`><'     
+                                           ."    /|     
+                                          /  /  // .-"'y".     
+                                       _."  /  // / -//-//     
+                                    _."l   /| || / ,// //     
+                                 _."  / ',/ | |," ,// //     
+                     .-.      _."   ."  ."  | \`  ,//-//     
+                    //'.'. _."   _."/ |/    "._."// //     
+                   //  _\\ \\  _,-" _|  Y          ^  ^     
+                  //_."  \\'\\" /  / \\  \\._     
+                 //"    _.\\ \\|  /   "----|====-.     
+              _.//   _." \\_\\___/        ||     \\\\     
+           .-" //_.-" \\_."              ||      \\\\     
+        _."   //" \\__,"                 ||       \\\\     
+      ."   __//>.-"                     ||        "----     
+     "---"" //                           \\               
+  `;
 }
-
-if (localStorage.getItem("killer_end_time")) {
-  endTime = parseInt(localStorage.getItem("killer_end_time"), 10);
-  guessesLeft = parseInt(localStorage.getItem("killer_guesses"), 10);
-  gameOver = JSON.parse(localStorage.getItem("killer_game_over")) || false;
-  if (gameOver && localStorage.getItem("killer_death_photo")) {
-    deathImage.src = localStorage.getItem("killer_death_photo");
-    deathImage.style.display = "block";
-  }
-} else {
-  endTime = Math.floor(Date.now() / 1000) + totalTime;
-  saveGame();
-}
-
-startTimer();
 
 function saveGame() {
   localStorage.setItem("killer_end_time", endTime);
@@ -215,8 +176,26 @@ function saveGame() {
   localStorage.setItem("killer_game_over", gameOver);
 }
 
+function loadGame() {
+  const savedEndTime = localStorage.getItem("killer_end_time");
+  const savedGuesses = localStorage.getItem("killer_guesses");
+  if (savedEndTime && savedGuesses) {
+    endTime = parseInt(savedEndTime, 10);
+    guessesLeft = parseInt(savedGuesses, 10);
+  } else {
+    resetGame();
+  }
+}
+
+function resetGame() {
+  endTime = Math.floor(Date.now() / 1000) + totalTime;
+  guessesLeft = 3;
+  professionGuessed = false;
+  gameOver = false;
+  saveGame();
+}
+
 function startTimer() {
-  timerActive = true;
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(updateClock, 1000);
   updateClock();
@@ -231,7 +210,7 @@ function updateClock() {
   }
 
   if (timeLeft <= 0 && !gameOver) {
-    endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nHOW DOES IT FEEL TO CAUSE A DEATH?\nTYPE \"MANTIS\" TO PLAY AGAIN.\nFIND ME IF YOU CAN. :)");
+    endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\n\n" + mantisArt() + "\nTYPE \"MANTIS\" TO PLAY AGAIN.");
   } else if (timeLeft > 0) {
     hrsEl.textContent = String(Math.floor(timeLeft / 3600)).padStart(2, '0');
     minsEl.textContent = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, '0');
@@ -257,9 +236,8 @@ function submitAnswer() {
   let ans = document.getElementById('userAnswer').value.trim().toLowerCase();
   if (ans === "mantis" && gameOver) {
     deathImage.style.display = "none";
-    endTime = Math.floor(Date.now() / 1000) + totalTime;
-    guessesLeft = 3; professionGuessed = false; gameOver = false;
-    saveGame(); startTimer();
+    resetGame();
+    startTimer();
     document.getElementById('result').innerText = "";
     guessesEl.textContent = guessesLeft;
     clueEl.style.display = "none";
@@ -269,10 +247,13 @@ function submitAnswer() {
     return;
   }
 
-  if (!timerActive || guessesLeft <= 0) return;
+  if (!timerInterval || guessesLeft <= 0) return;
 
   if (workplace.includes(ans)) {
-    endGame("WELL DONE. YOU’VE FOUND ME.\nSHE'LL LIVE ANOTHER DAY.\nWILL YOU REPORT ME TO THE METRO POLICE?");
+    clearInterval(timerInterval);
+    timerActive = false;
+    document.getElementById('result').innerText = "WELL DONE. YOU’VE FOUND ME.\nI’d still like to find you one day. Goodbye for now my new friend.\n\n" + mantisArt();
+    gameOver = true; saveGame();
   } else if (profession.includes(ans)) {
     if (!professionGuessed) {
       professionGuessed = true;
@@ -285,7 +266,7 @@ function submitAnswer() {
     guessesLeft--; saveGame();
     guessesEl.textContent = guessesLeft;
     if (guessesLeft <= 0) {
-      endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nHOW DOES IT FEEL TO CAUSE A DEATH?\nTYPE \"MANTIS\" TO PLAY AGAIN.\nFIND ME IF YOU CAN. :)");
+      endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\n\n" + mantisArt() + "\nTYPE \"MANTIS\" TO PLAY AGAIN.");
     } else {
       let warning = (guessesLeft === 1)
         ? "This is your last chance. Can you bear the responsibility of her death? Was it worth it?"
@@ -298,18 +279,23 @@ function submitAnswer() {
 function endGame(message) {
   clearInterval(timerInterval);
   timerActive = false;
-  gameOver = true; saveGame();
+  gameOver = true;
+  saveGame();
   const photos = ["IMG_2962.jpeg", "IMG_2963.jpeg"];
   const randomPhoto = photos[Math.floor(Math.random() * photos.length)];
   deathImage.src = randomPhoto;
   deathImage.style.display = "block";
-  localStorage.setItem("killer_death_photo", randomPhoto);
   document.getElementById('result').innerText = message;
 }
 
 function hideDeathImage() {
   deathImage.style.display = "none";
 }
+
+window.addEventListener('load', () => {
+  loadGame();
+  startTimer();
+});
 </script>
 </body>
 </html>
