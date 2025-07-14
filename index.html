@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,21 +9,18 @@
       padding: 0;
       width: 100%;
       height: 100%;
-      background: #000; /* pure black */
-      color: #00cc66;   /* dimmer phosphor green */
+      background: #000;
+      color: #00cc66;
       font-family: "Courier New", Courier, monospace;
       overflow: hidden;
     }
-
     body {
       display: flex;
       justify-content: center;
       align-items: center;
-      filter: contrast(1.1) brightness(0.9); /* dimmer glow */
-      text-shadow: 0 0 3px #00cc66, 0 0 6px #003300; /* soft phosphor glow */
+      filter: contrast(1.1) brightness(0.9);
+      text-shadow: 0 0 3px #00cc66, 0 0 6px #003300;
     }
-
-    /* Scanline overlay */
     body::before {
       content: "";
       position: fixed;
@@ -41,12 +37,10 @@
       pointer-events: none;
       animation: flicker 0.2s infinite;
     }
-
     @keyframes flicker {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.95; }
     }
-
     .crt {
       background: #000;
       border: 1px solid #00cc66;
@@ -56,7 +50,6 @@
       max-width: 700px;
       width: 90%;
     }
-
     .flip-clock {
       display: flex;
       justify-content: center;
@@ -64,13 +57,11 @@
       font-size: 42px;
       margin-bottom: 15px;
     }
-
     .digit, .separator {
       border: 1px solid #00cc66;
       padding: 8px 12px;
       box-shadow: 0 0 5px #00cc66;
     }
-
     input, button {
       background: #000;
       color: #00cc66;
@@ -80,77 +71,65 @@
       font-size: 16px;
       text-shadow: 0 0 3px #00cc66;
     }
-
     button:hover {
       background: #00cc66;
       color: #000;
       cursor: pointer;
     }
-
     #result {
       margin-top: 12px;
       white-space: pre;
     }
-
     .blink {
       animation: blinker 1s step-start infinite;
     }
     @keyframes blinker {
       50% { opacity: 0; }
     }
-
     audio {
-        bottom: 0; 
-  position: fixed; 
-  right: 0; 
+      bottom: 0;
+      position: fixed;
+      right: 0;
     }
-
-    audio::-webkit-media-controls-play-button,
-     audio::-webkit-media-controls-panel {
-     background-color: #ddd;
-     color: #ddd;
-     }
   </style>
 </head>
 <body>
 
   <div class="crt">
-
-
     <div class="flip-clock" id="timer">
       <span class="digit" id="hrs">02</span><span class="separator">:</span>
       <span class="digit" id="mins">00</span><span class="separator">:</span>
       <span class="digit" id="secs">00</span>
     </div>
-    <div id="question">WHERE DO I WORK?</div>
+    <div id="question">WHERE DO I WORK? (3 guesses left)</div>
     <input id="userAnswer" type="text" placeholder="> Type your answer..." />
     <button onclick="submitAnswer()">SUBMIT</button>
     <div id="result"></div>
   </div>
 
-
   <div style="display:flex; width=100%">
-     <audio controls>
-  <source src="audio.wav" type="audio/wav">
-</audio>
-
-</div>
+    <audio controls>
+      <source src="audio.wav" type="audio/wav">
+    </audio>
+  </div>
 
 <script>
-const totalTime = 4800; // 1 hour 20 minutes
+const totalTime = 7200; // 2 hours
 let timerActive = false;
 let timerInterval;
 let endTime;
+let guessesLeft = 3; // 🆕 Add guess counter
 
-const workplace = ["kyoto uni", "kyoto university", "KyotoU"];
+const workplace = ["kyoto uni", "kyoto university", "kyotou"];
 const profession = ["entomologist", "professor", "teacher"];
 
 const hrsEl = document.getElementById('hrs'),
       minsEl = document.getElementById('mins'),
       secsEl = document.getElementById('secs');
+const questionEl = document.getElementById('question');
 
 function mantisArt() {
-  const asciiArt = `
+  return `
                        _                _     
                                            '-.          ,-'     
                                               '.      ,'     
@@ -174,8 +153,7 @@ function mantisArt() {
         _."   //" \\__,"                 ||       \\\\     
       ."   __//>.-"                     ||        "----     
      "---"" //                           \\           
-`;
-  return asciiArt;
+  `;
 }
 
 function startTimer() {
@@ -188,6 +166,7 @@ function startTimer() {
   timerInterval = setInterval(updateClock, 1000);
   updateClock();
 }
+
 function typeWriterEffect(text, callback) {
   let i = 0;
   document.getElementById('result').innerHTML = "";
@@ -198,23 +177,18 @@ function typeWriterEffect(text, callback) {
       setTimeout(type, 50);
     } else {
       document.getElementById('result').innerHTML +=
-        "<span class=\"blink\">Tick tock. Tick tock.</span>\n" + mantisArt();
+        "\n\n<span class=\"blink\">Tick tock. Tick tock.</span>\n" + mantisArt();
       if (callback) callback();
     }
   }
   type();
 }
+
 function updateClock() {
   const now = Math.floor(Date.now() / 1000);
   let timeLeft = endTime - now;
   if (timeLeft <= 0) {
-    clearInterval(timerInterval);
-    timerActive = false;
-    taunt =
-"YOU HAVE LOST MY NEW FRIEND. \nSHE HAS NOW DIED BECAUSE OF YOU. \nTYPE \"MANTIS\" TO PLAY AGAIN." + mantisArt();
-    typeWriterEffect(taunt, () => {});
-    
-localStorage.removeItem("killer_end_time");
+    endGame("YOU HAVE LOST MY NEW FRIEND.\nSHE HAS NOW DIED BECAUSE OF YOU.");
     return;
   }
   let h = Math.floor(timeLeft / 3600),
@@ -225,32 +199,42 @@ localStorage.removeItem("killer_end_time");
   secsEl.textContent = s.toString().padStart(2, '0');
 }
 
+function endGame(message) {
+  clearInterval(timerInterval);
+  timerActive = false;
+  localStorage.removeItem("killer_end_time");
+  typeWriterEffect(`${message}\nTYPE "MANTIS" TO PLAY AGAIN.`);
+}
+
 function submitAnswer() {
   let ans = document.getElementById('userAnswer').value.trim().toLowerCase();
   if (ans === "mantis") {
     endTime = Math.floor(Date.now() / 1000) + totalTime;
+    guessesLeft = 3; // reset guesses
     localStorage.setItem("killer_end_time", endTime);
     startTimer();
     document.getElementById('result').textContent = "";
+    questionEl.textContent = `WHERE DO I WORK? (${guessesLeft} guesses left)`;
     return;
   }
-  if (!timerActive) return;
+  if (!timerActive || guessesLeft <= 0) return;
 
-  if (workplace.includes(ans.toLowerCase())) {
-    clearInterval(timerInterval);
-    timerActive = false;
-    localStorage.removeItem("killer_end_time");
-    const taunt = "WELL DONE. YOU’VE FOUND ME. SHE'LL LIVE ANOTHER DAY.\nWILL YOU REPORT ME TO THE METRO POLICE?\nGOODBYE FOR NOW, WHOEVER YOU ARE.";
-    typeWriterEffect(taunt, () => {});
+  if (workplace.includes(ans)) {
+    endGame("WELL DONE. YOU’VE FOUND ME.\nSHE'LL LIVE ANOTHER DAY.\nWILL YOU REPORT ME TO THE METRO POLICE?");
   } else if (profession.includes(ans)) {
     endTime += 900;
     localStorage.setItem("killer_end_time", endTime);
     updateClock();
     document.getElementById('result').textContent="CORRECT PROFESSION! +15 MIN BONUS.";
   } else {
-    const taunt = "INCORRECT. THE CLOCK TICKS...";
-    typeWriterEffect(taunt, () => {});
-
+    guessesLeft--;
+    if (guessesLeft <= 0) {
+      endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.");
+    } else {
+      questionEl.textContent = `WHERE DO I WORK? (${guessesLeft} guesses left)`;
+      const taunt = "INCORRECT. THE CLOCK TICKS...";
+      typeWriterEffect(taunt, () => {});
+    }
   }
 }
 
