@@ -49,6 +49,7 @@
       padding: 15px;
       max-width: 700px;
       width: 90%;
+      text-align: center;
     }
     .flip-clock {
       display: flex;
@@ -87,10 +88,21 @@
     @keyframes blinker {
       50% { opacity: 0; }
     }
-    audio {
-      bottom: 0;
-      position: fixed;
-      right: 0;
+    #deathImage {
+      display: none;
+      margin-top: 15px;
+      max-width: 90%;
+      border: 2px solid #00cc66;
+      box-shadow: 0 0 15px #00cc66;
+      animation: glitch 1.2s infinite alternate;
+    }
+    @keyframes glitch {
+      0% { opacity: 1; transform: scale(1); }
+      20% { opacity: 0.8; transform: scale(1.02) rotate(0.5deg); }
+      40% { opacity: 1; transform: scale(1); }
+      60% { opacity: 0.7; transform: scale(0.98) rotate(-0.5deg); }
+      80% { opacity: 1; transform: scale(1.01); }
+      100% { opacity: 1; transform: scale(1); }
     }
   </style>
 </head>
@@ -106,12 +118,7 @@
     <input id="userAnswer" type="text" placeholder="> Type your answer..." />
     <button onclick="submitAnswer()">SUBMIT</button>
     <div id="result"></div>
-  </div>
-
-  <div style="display:flex; width=100%">
-    <audio controls>
-      <source src="audio.wav" type="audio/wav">
-    </audio>
+    <img id="deathImage" src="" alt="Game Over Image" />
   </div>
 
 <script>
@@ -119,8 +126,9 @@ const totalTime = 7200; // 2 hours
 let timerActive = false;
 let timerInterval;
 let endTime;
-let guessesLeft = 3; // 🆕 Track guesses
-let professionGuessed = false; // 🆕 Track if profession guessed
+let guessesLeft = 3;
+let professionGuessed = false;
+let photoTimeout; // 🆕 to clear timeout
 
 const workplace = ["kyoto uni", "kyoto university", "kyotou"];
 const profession = ["entomologist", "professor", "teacher"];
@@ -128,8 +136,8 @@ const profession = ["entomologist", "professor", "teacher"];
 const hrsEl = document.getElementById('hrs'),
       minsEl = document.getElementById('mins'),
       secsEl = document.getElementById('secs');
-const questionEl = document.getElementById('question');
 const guessesEl = document.getElementById('guesses');
+const deathImage = document.getElementById('deathImage');
 
 function mantisArt() {
   return `
@@ -206,20 +214,34 @@ function endGame(message) {
   clearInterval(timerInterval);
   timerActive = false;
   localStorage.removeItem("killer_end_time");
+
+  // Show photo with glitch animation
+  const photos = ["IMG_2962.jpeg", "IMG_2963.jpeg"];
+  const randomPhoto = photos[Math.floor(Math.random() * photos.length)];
+  deathImage.src = randomPhoto;
+  deathImage.style.display = "block";
+
+  // Auto-hide photo after 30 seconds
+  clearTimeout(photoTimeout);
+  photoTimeout = setTimeout(() => {
+    deathImage.style.display = "none";
+  }, 30000);
+
   typeWriterEffect(`${message}\nTYPE "MANTIS" TO PLAY AGAIN.`);
 }
 
 function submitAnswer() {
   let ans = document.getElementById('userAnswer').value.trim().toLowerCase();
   if (ans === "mantis") {
+    clearTimeout(photoTimeout); // hide photo if restarting
+    deathImage.style.display = "none";
     endTime = Math.floor(Date.now() / 1000) + totalTime;
-    guessesLeft = 3; // reset guesses
-    professionGuessed = false; // reset profession
+    guessesLeft = 3;
+    professionGuessed = false;
     localStorage.setItem("killer_end_time", endTime);
     startTimer();
     document.getElementById('result').textContent = "";
     guessesEl.textContent = guessesLeft;
-    questionEl.innerHTML = `WHERE DO I WORK? (<span id="guesses">${guessesLeft}</span> guesses left)`;
     return;
   }
   if (!timerActive || guessesLeft <= 0) return;
