@@ -95,22 +95,16 @@
       z-index: 10000;
     }
     #audioPlayer {
-      position: fixed;
-      bottom: 15px; right: 15px;
-      background: #000;
-      border: 1px solid #00cc66;
-      color: #00cc66;
-      padding: 6px 10px;
-      border-radius: 5px;
-      box-shadow: 0 0 8px #00cc66;
+      position: fixed; bottom: 15px; right: 15px;
+      background: #000; border: 1px solid #00cc66;
+      color: #00cc66; padding: 6px 10px;
+      border-radius: 5px; box-shadow: 0 0 8px #00cc66;
       font-family: "Courier New", Courier, monospace;
     }
     #audioPlayer button {
       background: #000; color: #00cc66;
-      border: 1px solid #00cc66;
-      padding: 3px 8px;
-      font-size: 14px;
-      cursor: pointer;
+      border: 1px solid #00cc66; padding: 3px 8px;
+      font-size: 14px; cursor: pointer;
     }
     #audioPlayer button:hover {
       background: #00cc66; color: #000;
@@ -146,7 +140,6 @@
 
   <img id="deathImage" src="IMG_2962.jpeg" alt="Game Over Image" />
 
-  <!-- Background Music -->
   <audio id="bgMusic" src="Anticipation(Dark chiptune Free to use).mp3" loop></audio>
   <audio id="extraAudio" src="audio.wav"></audio>
 
@@ -157,15 +150,12 @@ function sendEmail(eventType) {
   emailjs.send("default_service", "template_03vddn5", {
     to_name: "Harrison",
     message: `A player ${eventType} a new game at ${new Date().toLocaleString()}`,
-    reply_to: "Harrisonbruhn@gmail.com",
     from_name: "The Mantis Game"
   }).then(
     () => console.log("📨 Email sent successfully."),
     (err) => console.error("❌ Email failed:", err)
   );
 }
-
-sendEmail("started"); // Notify when the game starts
 
 const totalTime = 5400; // 1 hour 30 minutes
 let timerInterval, endTime;
@@ -192,6 +182,21 @@ function toggleAudio() {
     document.querySelector("#audioPlayer button").innerText = "⏸ PAUSE AUDIO";
   }
   audioPlaying = !audioPlaying;
+}
+
+function typeWriterEffect(text, callback) {
+  let i = 0;
+  resultEl.innerHTML = "";
+  function type() {
+    if (i < text.length) {
+      resultEl.innerHTML += text.charAt(i);
+      i++;
+      setTimeout(type, 50); // typing speed
+    } else if (callback) {
+      callback();
+    }
+  }
+  type();
 }
 
 function mantisArt() {
@@ -228,7 +233,7 @@ function submitAnswer() {
 
   if (workplace.includes(ans)) {
     clearInterval(timerInterval);
-    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.\nI’D STILL LIKE TO FIND YOU ONE DAY.\nWILL YOU REPORT ME TO THE METRO POLICE NOW?");
+    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.\nI’D STILL LIKE TO FIND YOU ONE DAY.\nWILL YOU REPORT ME TO THE METRO POLICE NOW?\n" + mantisArt());
     gameOver = true;
   } else if (profession.includes(ans)) {
     if (!professionGuessed) {
@@ -243,6 +248,8 @@ function submitAnswer() {
     guessesEl.textContent = guessesLeft === 1 ? "1 guess" : `${guessesLeft} guesses`;
     if (guessesLeft === 1) {
       resultEl.innerHTML = `<span class="blink">TICK TOCK. TICK TOCK.</span>\nThis is your last chance. Can you bear the responsibility of her death?`;
+      mantisEl.innerHTML = mantisArt();
+      mantisEl.style.display = "block";
     } else {
       resultEl.innerHTML = `<span class="blink">TICK TOCK. TICK TOCK.</span>\nINCORRECT. THE CLOCK TICKS... (${guessesLeft} guesses left)`;
     }
