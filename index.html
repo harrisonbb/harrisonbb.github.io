@@ -5,106 +5,43 @@
   <title>Cat and Mouse</title>
   <style>
     html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background: #000;
-      color: #00cc66;
-      font-family: "Courier New", Courier, monospace;
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      background: #000; color: #00cc66;
+      font-family: "Courier New", monospace;
       overflow: hidden;
     }
     body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
+      display: flex; justify-content: center; align-items: center; text-align: center;
       filter: contrast(1.1) brightness(0.9);
       text-shadow: 0 0 3px #00cc66, 0 0 6px #003300;
     }
-    body::before {
-      content: "";
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: repeating-linear-gradient(
-        0deg,
-        rgba(0, 255, 102, 0.04),
-        rgba(0, 255, 102, 0.04) 2px,
-        transparent 2px,
-        transparent 4px
-      );
-      z-index: 999;
-      pointer-events: none;
-      animation: flicker 0.2s infinite;
-    }
-    @keyframes flicker {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.95; }
-    }
     .crt {
-      background: #000;
-      border: 1px solid #00cc66;
+      background: #000; border: 1px solid #00cc66;
       box-shadow: inset 0 0 10px #003300, 0 0 15px #00cc66;
-      border-radius: 8px;
-      padding: 15px;
-      width: 90vw;
-      max-width: 800px;
-      height: auto;
-      overflow: auto;
-      transform: scale(1);
-      position: relative;
+      border-radius: 8px; padding: 15px;
+      width: 90vw; max-width: 800px;
     }
     .flip-clock {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      font-size: 42px;
-      margin-bottom: 15px;
+      display: flex; justify-content: center; gap: 8px;
+      font-size: 42px; margin-bottom: 15px;
     }
     .digit, .separator {
-      border: 1px solid #00cc66;
-      padding: 8px 12px;
+      border: 1px solid #00cc66; padding: 8px 12px;
       box-shadow: 0 0 5px #00cc66;
     }
     input, button {
-      background: #000;
-      color: #00cc66;
-      border: 1px solid #00cc66;
-      padding: 6px 12px;
-      margin: 8px;
-      font-size: 16px;
-      text-shadow: 0 0 3px #00cc66;
+      background: #000; color: #00cc66; border: 1px solid #00cc66;
+      padding: 6px 12px; margin: 8px; font-size: 16px;
     }
-    button:hover {
-      background: #00cc66;
-      color: #000;
-      cursor: pointer;
-    }
-    #result {
-      margin-top: 12px;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      font-size: 14px;
-      line-height: 1.3;
-    }
+    button:hover { background: #00cc66; color: #000; cursor: pointer; }
+    #result { margin-top: 12px; white-space: pre-wrap; font-size: 14px; }
     #deathImage {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
+      display: none; position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      max-width: 90vw;
-      max-height: 90vh;
-      border: 2px solid #00cc66;
-      box-shadow: 0 0 15px #00cc66;
-      animation: glitch 1.2s infinite alternate;
-      z-index: 10000;
-      cursor: pointer;
-    }
-    #deathImage:active {
-      opacity: 0.8;
+      max-width: 90vw; max-height: 90vh;
+      border: 2px solid #00cc66; box-shadow: 0 0 15px #00cc66;
+      z-index: 10000; cursor: pointer;
     }
   </style>
 </head>
@@ -112,9 +49,7 @@
 
   <div class="crt">
     <div class="flip-clock" id="timer">
-      <span class="digit" id="hrs">01</span><span class="separator">:</span>
-      <span class="digit" id="mins">30</span><span class="separator">:</span>
-      <span class="digit" id="secs">00</span>
+      <span class="digit" id="hrs">01</span>:<span class="digit" id="mins">30</span>:<span class="digit" id="secs">00</span>
     </div>
     <div id="question">WHERE DO I WORK? (<span id="guesses">3</span> guesses left)</div>
     <input id="userAnswer" type="text" placeholder="> Type your answer..." />
@@ -125,45 +60,37 @@
   <img id="deathImage" src="" alt="Game Over Image" onclick="hideDeathImage()" />
 
 <script>
-const totalTime = 5400; // 1 hour 30 minutes
-let timerActive = false;
-let timerInterval;
-let endTime;
-let guessesLeft = 3;
-let professionGuessed = false;
-let gameOver = false;
+const totalTime = 5400;
+let timerInterval, endTime, guessesLeft = 3, professionGuessed = false, gameOver = false;
 
-const hrsEl = document.getElementById('hrs'),
-      minsEl = document.getElementById('mins'),
-      secsEl = document.getElementById('secs');
-const guessesEl = document.getElementById('guesses');
-const deathImage = document.getElementById('deathImage');
+const hrsEl = document.getElementById('hrs'), minsEl = document.getElementById('mins'),
+      secsEl = document.getElementById('secs'), guessesEl = document.getElementById('guesses'),
+      deathImage = document.getElementById('deathImage');
 
-// Obfuscate answers for developer tools
-const encWorkplace = atob("a3lvdG91O2t5b3RvIHVuaTtreW90byB1bml2ZXJzaXR5");
-const workplace = encWorkplace.split(";").map(x => x.trim().toLowerCase());
+const workplace = ["kyoto uni", "kyoto university", "kyotou"];
 const profession = ["entomologist", "professor", "teacher"];
 
-// Load saved state
 if (localStorage.getItem("killer_end_time")) {
   endTime = parseInt(localStorage.getItem("killer_end_time"), 10);
+  guessesLeft = parseInt(localStorage.getItem("killer_guesses"), 10);
   gameOver = JSON.parse(localStorage.getItem("killer_game_over")) || false;
-  guessesLeft = JSON.parse(localStorage.getItem("killer_guesses")) || 3;
-  if (gameOver && localStorage.getItem("killer_death_photo")) {
-    deathImage.src = localStorage.getItem("killer_death_photo");
-    deathImage.style.display = "block";
+  if (gameOver) {
+    showDeathImage();
   }
-  startTimer();
 } else {
   endTime = Math.floor(Date.now() / 1000) + totalTime;
+  saveGame();
+}
+
+startTimer();
+
+function saveGame() {
   localStorage.setItem("killer_end_time", endTime);
   localStorage.setItem("killer_guesses", guessesLeft);
-  startTimer();
+  localStorage.setItem("killer_game_over", gameOver);
 }
 
 function startTimer() {
-  timerActive = true;
-  if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(updateClock, 1000);
   updateClock();
 }
@@ -174,71 +101,33 @@ function updateClock() {
 
   if (timeLeft <= 0 && !gameOver) {
     endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nHOW DOES IT FEEL TO CAUSE A DEATH?\nTYPE \"MANTIS\" TO PLAY AGAIN.\nFIND ME IF YOU CAN. :)");
-    return;
   }
 
   if (timeLeft > 0) {
-    let h = Math.floor(timeLeft / 3600),
-        m = Math.floor((timeLeft % 3600) / 60),
-        s = timeLeft % 60;
-    hrsEl.textContent = h.toString().padStart(2, '0');
-    minsEl.textContent = m.toString().padStart(2, '0');
-    secsEl.textContent = s.toString().padStart(2, '0');
+    hrsEl.textContent = String(Math.floor(timeLeft / 3600)).padStart(2, '0');
+    minsEl.textContent = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, '0');
+    secsEl.textContent = String(timeLeft % 60).padStart(2, '0');
   }
-}
-
-function endGame(message) {
-  clearInterval(timerInterval);
-  timerActive = false;
-  gameOver = true;
-  localStorage.setItem("killer_game_over", true);
-
-  const photos = ["IMG_2962.jpeg", "IMG_2963.jpeg"];
-  const randomPhoto = photos[Math.floor(Math.random() * photos.length)];
-  deathImage.src = randomPhoto;
-  deathImage.style.display = "block";
-  localStorage.setItem("killer_death_photo", randomPhoto);
-
-  document.getElementById('result').innerText = message;
-}
-
-function hideDeathImage() {
-  deathImage.style.display = "none";
 }
 
 function submitAnswer() {
-  let ans = document.getElementById('userAnswer').value.trim().toLowerCase();
-  if (ans === "mantis" && gameOver) {
-    deathImage.style.display = "none";
-    endTime = Math.floor(Date.now() / 1000) + totalTime;
-    guessesLeft = 3;
-    professionGuessed = false;
-    gameOver = false;
-    localStorage.setItem("killer_end_time", endTime);
-    localStorage.setItem("killer_guesses", guessesLeft);
-    localStorage.setItem("killer_game_over", false);
-    startTimer();
-    document.getElementById('result').textContent = "";
-    return;
-  }
+  const ans = document.getElementById('userAnswer').value.trim().toLowerCase();
+  if (ans === "mantis" && gameOver) restartGame();
 
-  if (!timerActive || guessesLeft <= 0) return;
+  if (!timerInterval || guessesLeft <= 0 || gameOver) return;
 
   if (workplace.includes(ans)) {
     endGame("WELL DONE. YOU’VE FOUND ME.\nSHE'LL LIVE ANOTHER DAY.\nWILL YOU REPORT ME TO THE METRO POLICE?");
   } else if (profession.includes(ans)) {
     if (!professionGuessed) {
       professionGuessed = true;
-      endTime += 900;
-      localStorage.setItem("killer_end_time", endTime);
-      updateClock();
-      document.getElementById('result').textContent = "CORRECT PROFESSION! +15 MIN BONUS.";
+      endTime += 900; saveGame();
+      document.getElementById('result').innerText = "CORRECT PROFESSION! +15 MIN BONUS.";
     } else {
-      document.getElementById('result').textContent = "You’ve already guessed my profession. That won’t help you now.";
+      document.getElementById('result').innerText = "You’ve already guessed my profession.";
     }
   } else {
-    guessesLeft--;
-    localStorage.setItem("killer_guesses", guessesLeft);
+    guessesLeft--; saveGame();
     guessesEl.textContent = guessesLeft;
     if (guessesLeft <= 0) {
       endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nHOW DOES IT FEEL TO CAUSE A DEATH?\nTYPE \"MANTIS\" TO PLAY AGAIN.\nFIND ME IF YOU CAN. :)");
@@ -246,6 +135,32 @@ function submitAnswer() {
       document.getElementById('result').innerText = `INCORRECT. THE CLOCK TICKS... (${guessesLeft} guesses left)`;
     }
   }
+}
+
+function endGame(msg) {
+  clearInterval(timerInterval);
+  gameOver = true; saveGame();
+  document.getElementById('result').innerText = msg;
+  showDeathImage();
+}
+
+function showDeathImage() {
+  const photos = ["IMG_2962.jpeg", "IMG_2963.jpeg"];
+  const img = photos[Math.floor(Math.random() * photos.length)];
+  deathImage.src = img; deathImage.style.display = "block";
+}
+
+function hideDeathImage() {
+  deathImage.style.display = "none";
+}
+
+function restartGame() {
+  endTime = Math.floor(Date.now() / 1000) + totalTime;
+  guessesLeft = 3; professionGuessed = false; gameOver = false;
+  saveGame(); startTimer();
+  document.getElementById('result').innerText = "";
+  guessesEl.textContent = guessesLeft;
+  deathImage.style.display = "none";
 }
 </script>
 </body>
