@@ -157,12 +157,15 @@ function sendEmail(eventType) {
   emailjs.send("default_service", "template_03vddn5", {
     to_name: "Harrison",
     message: `A player ${eventType} a new game at ${new Date().toLocaleString()}`,
+    reply_to: "Harrisonbruhn@gmail.com",
     from_name: "The Mantis Game"
   }).then(
     () => console.log("📨 Email sent successfully."),
     (err) => console.error("❌ Email failed:", err)
   );
 }
+
+sendEmail("started"); // Notify when the game starts
 
 const totalTime = 5400; // 1 hour 30 minutes
 let timerInterval, endTime;
