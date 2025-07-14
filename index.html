@@ -94,6 +94,27 @@
       box-shadow: 0 0 15px #00cc66;
       z-index: 10000;
     }
+    #audioPlayer {
+      position: fixed;
+      bottom: 15px; right: 15px;
+      background: #000;
+      border: 1px solid #00cc66;
+      color: #00cc66;
+      padding: 6px 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 8px #00cc66;
+      font-family: "Courier New", Courier, monospace;
+    }
+    #audioPlayer button {
+      background: #000; color: #00cc66;
+      border: 1px solid #00cc66;
+      padding: 3px 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #audioPlayer button:hover {
+      background: #00cc66; color: #000;
+    }
     .blink {
       color: #ff4444;
       animation: blinker 1s step-start infinite;
@@ -119,10 +140,15 @@
     <div id="clue"></div>
   </div>
 
+  <div id="audioPlayer">
+    <button onclick="toggleAudio()">▶ PLAY AUDIO</button>
+  </div>
+
   <img id="deathImage" src="IMG_2962.jpeg" alt="Game Over Image" />
 
   <!-- Background Music -->
   <audio id="bgMusic" src="Anticipation(Dark chiptune Free to use).mp3" loop></audio>
+  <audio id="extraAudio" src="audio.wav"></audio>
 
 <script>
 emailjs.init("1RS7AErKfv1LfaJ-k"); // Your Public Key
@@ -131,6 +157,7 @@ function sendEmail(eventType) {
   emailjs.send("default_service", "template_03vddn5", {
     to_name: "Harrison",
     message: `A player ${eventType} a new game at ${new Date().toLocaleString()}`,
+    reply_to: "Harrisonbruhn@gmail.com",
     from_name: "The Mantis Game"
   }).then(
     () => console.log("📨 Email sent successfully."),
@@ -138,9 +165,12 @@ function sendEmail(eventType) {
   );
 }
 
+sendEmail("started"); // Notify when the game starts
+
 const totalTime = 5400; // 1 hour 30 minutes
 let timerInterval, endTime;
 let guessesLeft = 3, professionGuessed = false, gameOver = false;
+let audioPlaying = false;
 
 const workplace = ["kyoto uni", "kyoto university", "kyotou"];
 const profession = ["entomologist", "professor", "teacher"];
@@ -150,7 +180,19 @@ const mantisEl = document.getElementById('mantisArt');
 const clueEl = document.getElementById('clue');
 const deathImage = document.getElementById('deathImage');
 const bgMusic = document.getElementById('bgMusic');
+const extraAudio = document.getElementById('extraAudio');
 bgMusic.volume = 0.2; // Play quietly
+
+function toggleAudio() {
+  if (audioPlaying) {
+    extraAudio.pause();
+    document.querySelector("#audioPlayer button").innerText = "▶ PLAY AUDIO";
+  } else {
+    extraAudio.play();
+    document.querySelector("#audioPlayer button").innerText = "⏸ PAUSE AUDIO";
+  }
+  audioPlaying = !audioPlaying;
+}
 
 function mantisArt() {
   return `
@@ -180,58 +222,8 @@ function mantisArt() {
   `;
 }
 
-function typeWriterEffect(text, callback) {
-  resultEl.innerHTML = "";
-  let i = 0;
-  function type() {
-    if (i < text.length) {
-      resultEl.innerHTML += text.charAt(i);
-      i++;
-      setTimeout(type, 50);
-    } else {
-      if (callback) callback();
-    }
-  }
-  type();
-}
-
-function startTimer() {
-  endTime = Math.floor(Date.now() / 1000) + totalTime;
-  if (timerInterval) clearInterval(timerInterval);
-  timerInterval = setInterval(updateClock, 1000);
-  updateClock();
-}
-
-function updateClock() {
-  const now = Math.floor(Date.now() / 1000);
-  let timeLeft = endTime - now;
-
-  if (timeLeft === 1800 && !gameOver) {
-    clueEl.style.display = "block";
-    clueEl.textContent = "If you can guess my profession I’ll give you 15 minutes extra :)";
-  }
-
-  if (timeLeft <= 0 && !gameOver) {
-    endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nTYPE \"MANTIS\" TO PLAY AGAIN.");
-  } else {
-    let h = Math.floor(timeLeft / 3600);
-    let m = Math.floor((timeLeft % 3600) / 60);
-    let s = timeLeft % 60;
-    document.getElementById('hrs').textContent = String(h).padStart(2, '0');
-    document.getElementById('mins').textContent = String(m).padStart(2, '0');
-    document.getElementById('secs').textContent = String(s).padStart(2, '0');
-  }
-}
-
 function submitAnswer() {
-  const ans = document.getElementById('userAnswer').value.trim().toLowerCase();
-  if (ans === "mantis" && gameOver) {
-    resetGame();
-    sendEmail("RESTARTED");
-    startTimer();
-    return;
-  }
-
+  let ans = document.getElementById('userAnswer').value.trim().toLowerCase();
   if (!timerInterval || guessesLeft <= 0) return;
 
   if (workplace.includes(ans)) {
@@ -248,50 +240,14 @@ function submitAnswer() {
     }
   } else {
     guessesLeft--;
-    guessesEl.textContent = guessesLeft;
-    if (guessesLeft === 2) {
-      mantisEl.style.display = "block"; // Show mantis after first wrong guess
-      mantisEl.textContent = mantisArt();
-    }
-    if (guessesLeft <= 0) {
-      endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nTYPE \"MANTIS\" TO PLAY AGAIN.");
-      deathImage.style.display = "block"; // Show photo only on loss
+    guessesEl.textContent = guessesLeft === 1 ? "1 guess" : `${guessesLeft} guesses`;
+    if (guessesLeft === 1) {
+      resultEl.innerHTML = `<span class="blink">TICK TOCK. TICK TOCK.</span>\nThis is your last chance. Can you bear the responsibility of her death?`;
     } else {
-      let warning = (guessesLeft === 1)
-        ? "This is your last chance. Can you bear the responsibility of her death?"
-        : `INCORRECT. THE CLOCK TICKS... (${guessesLeft} guesses left)`;
-      typeWriterEffect(warning);
+      resultEl.innerHTML = `<span class="blink">TICK TOCK. TICK TOCK.</span>\nINCORRECT. THE CLOCK TICKS... (${guessesLeft} guesses left)`;
     }
   }
 }
-
-function endGame(message) {
-  clearInterval(timerInterval);
-  gameOver = true;
-  typeWriterEffect(message);
-}
-
-function resetGame() {
-  guessesLeft = 3;
-  professionGuessed = false;
-  gameOver = false;
-  document.getElementById('userAnswer').value = "";
-  resultEl.innerHTML = "";
-  mantisEl.style.display = "none";
-  clueEl.style.display = "none";
-  deathImage.style.display = "none";
-}
-
-// Start background music and send email on page load
-window.addEventListener('load', () => {
-  resetGame();
-  startTimer();
-  sendEmail("STARTED");
-  bgMusic.play().catch(() => {
-    console.log("Autoplay blocked; will start on user click.");
-    document.body.addEventListener("click", () => bgMusic.play(), { once: true });
-  });
-});
 </script>
 </body>
 </html>
