@@ -244,7 +244,7 @@ function sendEmailNotification() {
   emailjs.send("service_xxxxxx", "template_03vddn5", {
     message: "A new player has started the Cat and Mouse game."
   }).then(() => {
-    console.log("✅ Email sent to satosatosleuthhh@yahoo.com");
+    console.log("✅ Email sent to Harrisonbruhn@gmail.com");
   }).catch(err => {
     console.error("❌ Email error:", err);
   });
@@ -303,7 +303,7 @@ function submitAnswer() {
 
   if (workplace.includes(ans)) {
     clearInterval(timerInterval);
-    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.\nI’d still like to find you one day. Goodbye for now my new friend.\n\n" + mantisArt());
+    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.\nI’D STILL LIKE TO FIND YOU ONE DAY.\nWILL YOU REPORT ME TO THE METRO POLICE NOW?\n\n" + mantisArt());
     gameOver = true;
     inputField.disabled = true;
   } else if (profession.includes(ans)) {
