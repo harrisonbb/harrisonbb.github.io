@@ -97,40 +97,22 @@
     }
     #deathImage {
       display: none;
-      margin-top: 15px;
-      max-width: 90%;
+      position: fixed; /* Overlay on top */
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 80vw;
+      max-height: 80vh;
       border: 2px solid #00cc66;
       box-shadow: 0 0 15px #00cc66;
       animation: glitch 1.2s infinite alternate;
+      z-index: 10000;
     }
     @keyframes glitch {
-      0% { opacity: 1; transform: scale(1); }
-      20% { opacity: 0.8; transform: scale(1.02) rotate(0.5deg); }
-      40% { opacity: 1; transform: scale(1); }
-      60% { opacity: 0.7; transform: scale(0.98) rotate(-0.5deg); }
-      80% { opacity: 1; transform: scale(1.01); }
-      100% { opacity: 1; transform: scale(1); }
+      0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 0.85; transform: translate(-50%, -50%) scale(1.02); }
+      100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     }
-    @media (max-width: 900px) {
-      .crt {
-        transform: scale(0.9);
-      }
-      .flip-clock {
-        font-size: 28px;
-      }
-    }
-    @media (max-width: 600px) {
-      .crt {
-        transform: scale(0.8);
-      }
-      .flip-clock {
-        font-size: 22px;
-      }
-      #result {
-        font-size: 12px;
-      }
-    }
-    /* Custom CRT Audio Player */
     #audioPlayer {
       position: fixed;
       bottom: 15px;
@@ -156,12 +138,30 @@
       background: #00cc66;
       color: #000;
     }
-    /* Clue Text */
     #clue {
       margin-top: 20px;
       color: #00cc66;
       font-family: "Courier New", Courier, monospace;
       display: none;
+    }
+    @media (max-width: 900px) {
+      .crt {
+        transform: scale(0.9);
+      }
+      .flip-clock {
+        font-size: 28px;
+      }
+    }
+    @media (max-width: 600px) {
+      .crt {
+        transform: scale(0.8);
+      }
+      .flip-clock {
+        font-size: 22px;
+      }
+      #result {
+        font-size: 12px;
+      }
     }
   </style>
 </head>
@@ -178,12 +178,12 @@
     <button onclick="submitAnswer()">SUBMIT</button>
     <div id="result"></div>
     <div id="clue"></div>
-    <img id="deathImage" src="" alt="Game Over Image" />
   </div>
 
-  <!-- Custom CRT Audio Player -->
+  <img id="deathImage" src="" alt="Game Over Image" />
+
   <div id="audioPlayer">
-    <button onclick="toggleAudio()">▶ PLAY</button>
+    <button onclick="toggleAudio()">▶ PLAY AUDIO</button>
   </div>
 
 <script>
@@ -194,7 +194,7 @@ let endTime;
 let guessesLeft = 3;
 let professionGuessed = false;
 let photoTimeout;
-let gameOver = false; // Only allow restart if game is over
+let gameOver = false;
 let audioPlaying = false;
 
 // Audio setup
@@ -202,10 +202,10 @@ const audio = new Audio("audio.wav");
 function toggleAudio() {
   if (audioPlaying) {
     audio.pause();
-    document.querySelector("#audioPlayer button").innerText = "▶ PLAY";
+    document.querySelector("#audioPlayer button").innerText = "▶ PLAY AUDIO";
   } else {
     audio.play();
-    document.querySelector("#audioPlayer button").innerText = "⏸ PAUSE";
+    document.querySelector("#audioPlayer button").innerText = "⏸ PAUSE AUDIO";
   }
   audioPlaying = !audioPlaying;
 }
@@ -222,34 +222,6 @@ const hrsEl = document.getElementById('hrs'),
 const guessesEl = document.getElementById('guesses');
 const clueEl = document.getElementById('clue');
 const deathImage = document.getElementById('deathImage');
-
-function mantisArt() {
-  return `
-                       _                _     
-                                           '-.          ,-'     
-                                              '.      ,'     
-                                                \\    /     
-                                                _|__|_     
-                                               (,\\--/,,)     
-                                               /\\Y  Y/     
-                                             ."  \`><'     
-                                           ."    /|     
-                                          /  /  // .-"'y".     
-                                       _."  /  // / -//-//     
-                                    _."l   /| || / ,// //     
-                                 _."  / ',/ | |," ,// //     
-                     .-.      _."   ."  ."  | \`  ,//-//     
-                    //'.'. _."   _."/ |/    "._."// //     
-                   //  _\\ \\  _,-" _|  Y          ^  ^     
-                  //_."  \\'\\" /  / \\  \\._     
-                 //"    _.\\ \\|  /   "----|====-.     
-              _.//   _." \\_\\___/        ||     \\\\     
-           .-" //_.-" \\_."              ||      \\\\     
-        _."   //" \\__,"                 ||       \\\\     
-      ."   __//>.-"                     ||        "----     
-     "---"" //                           \\           
-  `;
-}
 
 function startTimer() {
   if (!endTime) {
@@ -288,7 +260,7 @@ function updateClock() {
   }
 
   if (timeLeft <= 0) {
-    endGame("YOU HAVE LOST MY NEW FRIEND.\nSHE HAS NOW DIED BECAUSE OF YOU.");
+    endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nHOW DOES IT FEEL TO CAUSE A DEATH?\nTYPE \"MANTIS\" TO PLAY AGAIN.\nFIND ME IF YOU CAN. :)");
     return;
   }
   let h = Math.floor(timeLeft / 3600),
@@ -315,7 +287,7 @@ function endGame(message) {
     deathImage.style.display = "none";
   }, 30000);
 
-  document.getElementById('result').innerText = `${message}\nTYPE "MANTIS" TO PLAY AGAIN.\n` + mantisArt();
+  document.getElementById('result').innerText = `${message}\n\n` + mantisArt();
 }
 
 function submitAnswer() {
@@ -356,7 +328,7 @@ function submitAnswer() {
     guessesLeft--;
     guessesEl.textContent = guessesLeft;
     if (guessesLeft <= 0) {
-      endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.");
+      endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nHOW DOES IT FEEL TO CAUSE A DEATH?\nTYPE \"MANTIS\" TO PLAY AGAIN.\nFIND ME IF YOU CAN. :)");
     } else {
       let warning = (guessesLeft === 1)
         ? "This is your last chance. Can you bear the responsibility of her death? Was it worth it?"
