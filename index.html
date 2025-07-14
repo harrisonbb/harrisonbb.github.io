@@ -53,6 +53,7 @@
       height: auto;
       overflow: auto;
       transform: scale(1);
+      position: relative;
     }
     .flip-clock {
       display: flex;
@@ -88,80 +89,22 @@
       font-size: 14px;
       line-height: 1.3;
     }
-    .blink {
-      animation: blinker 1s step-start infinite;
-      color: #ff4444;
-    }
-    @keyframes blinker {
-      50% { opacity: 0; }
-    }
     #deathImage {
       display: none;
-      position: fixed; /* Overlay on top */
+      position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      max-width: 80vw;
-      max-height: 80vh;
+      max-width: 90vw;
+      max-height: 90vh;
       border: 2px solid #00cc66;
       box-shadow: 0 0 15px #00cc66;
       animation: glitch 1.2s infinite alternate;
       z-index: 10000;
-    }
-    @keyframes glitch {
-      0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-      50% { opacity: 0.85; transform: translate(-50%, -50%) scale(1.02); }
-      100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    }
-    #audioPlayer {
-      position: fixed;
-      bottom: 15px;
-      right: 15px;
-      background: #000;
-      border: 1px solid #00cc66;
-      color: #00cc66;
-      padding: 8px;
-      border-radius: 5px;
-      box-shadow: 0 0 10px #00cc66;
-      z-index: 1000;
-      font-family: "Courier New", Courier, monospace;
-    }
-    #audioPlayer button {
-      background: #000;
-      border: 1px solid #00cc66;
-      color: #00cc66;
-      padding: 4px 8px;
-      font-size: 14px;
       cursor: pointer;
     }
-    #audioPlayer button:hover {
-      background: #00cc66;
-      color: #000;
-    }
-    #clue {
-      margin-top: 20px;
-      color: #00cc66;
-      font-family: "Courier New", Courier, monospace;
-      display: none;
-    }
-    @media (max-width: 900px) {
-      .crt {
-        transform: scale(0.9);
-      }
-      .flip-clock {
-        font-size: 28px;
-      }
-    }
-    @media (max-width: 600px) {
-      .crt {
-        transform: scale(0.8);
-      }
-      .flip-clock {
-        font-size: 22px;
-      }
-      #result {
-        font-size: 12px;
-      }
+    #deathImage:active {
+      opacity: 0.8;
     }
   </style>
 </head>
@@ -177,14 +120,9 @@
     <input id="userAnswer" type="text" placeholder="> Type your answer..." />
     <button onclick="submitAnswer()">SUBMIT</button>
     <div id="result"></div>
-    <div id="clue"></div>
   </div>
 
-  <img id="deathImage" src="" alt="Game Over Image" />
-
-  <div id="audioPlayer">
-    <button onclick="toggleAudio()">▶ PLAY AUDIO</button>
-  </div>
+  <img id="deathImage" src="" alt="Game Over Image" onclick="hideDeathImage()" />
 
 <script>
 const totalTime = 5400; // 1 hour 30 minutes
@@ -193,120 +131,94 @@ let timerInterval;
 let endTime;
 let guessesLeft = 3;
 let professionGuessed = false;
-let photoTimeout;
 let gameOver = false;
-let audioPlaying = false;
-
-// Audio setup
-const audio = new Audio("audio.wav");
-function toggleAudio() {
-  if (audioPlaying) {
-    audio.pause();
-    document.querySelector("#audioPlayer button").innerText = "▶ PLAY AUDIO";
-  } else {
-    audio.play();
-    document.querySelector("#audioPlayer button").innerText = "⏸ PAUSE AUDIO";
-  }
-  audioPlaying = !audioPlaying;
-}
-
-// Obfuscate answers
-const obf = atob("a3lvdG91O2t5b3RvIHVuaTtreW90byB1bml2ZXJzaXR5");
-const workplace = obf.split(";").map(x => x.trim());
-const profObf = atob("ZW50b21vbG9naXN0O3Byb2Zlc3Nvcjt0ZWFjaGVy");
-const profession = profObf.split(";").map(x => x.trim());
 
 const hrsEl = document.getElementById('hrs'),
       minsEl = document.getElementById('mins'),
       secsEl = document.getElementById('secs');
 const guessesEl = document.getElementById('guesses');
-const clueEl = document.getElementById('clue');
 const deathImage = document.getElementById('deathImage');
 
-function startTimer() {
-  if (!endTime) {
-    endTime = Math.floor(Date.now() / 1000) + totalTime;
-    localStorage.setItem("killer_end_time", endTime);
+// Obfuscate answers for developer tools
+const encWorkplace = atob("a3lvdG91O2t5b3RvIHVuaTtreW90byB1bml2ZXJzaXR5");
+const workplace = encWorkplace.split(";").map(x => x.trim().toLowerCase());
+const profession = ["entomologist", "professor", "teacher"];
+
+// Load saved state
+if (localStorage.getItem("killer_end_time")) {
+  endTime = parseInt(localStorage.getItem("killer_end_time"), 10);
+  gameOver = JSON.parse(localStorage.getItem("killer_game_over")) || false;
+  guessesLeft = JSON.parse(localStorage.getItem("killer_guesses")) || 3;
+  if (gameOver && localStorage.getItem("killer_death_photo")) {
+    deathImage.src = localStorage.getItem("killer_death_photo");
+    deathImage.style.display = "block";
   }
+  startTimer();
+} else {
+  endTime = Math.floor(Date.now() / 1000) + totalTime;
+  localStorage.setItem("killer_end_time", endTime);
+  localStorage.setItem("killer_guesses", guessesLeft);
+  startTimer();
+}
+
+function startTimer() {
   timerActive = true;
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(updateClock, 1000);
   updateClock();
 }
 
-function typeWriterEffect(text, callback) {
-  let i = 0;
-  clueEl.innerHTML = "";
-  clueEl.style.display = "block";
-  function type() {
-    if (i < text.length) {
-      clueEl.innerHTML += text.charAt(i);
-      i++;
-      setTimeout(type, 60);
-    } else if (callback) {
-      callback();
-    }
-  }
-  type();
-}
-
 function updateClock() {
   const now = Math.floor(Date.now() / 1000);
   let timeLeft = endTime - now;
 
-  // Show clue at 30 minutes left
-  if (timeLeft === 1800 && clueEl.innerHTML === "") {
-    typeWriterEffect("Sometimes the answer is right in front of you...");
-  }
-
-  if (timeLeft <= 0) {
+  if (timeLeft <= 0 && !gameOver) {
     endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nHOW DOES IT FEEL TO CAUSE A DEATH?\nTYPE \"MANTIS\" TO PLAY AGAIN.\nFIND ME IF YOU CAN. :)");
     return;
   }
-  let h = Math.floor(timeLeft / 3600),
-      m = Math.floor((timeLeft % 3600) / 60),
-      s = timeLeft % 60;
-  hrsEl.textContent = h.toString().padStart(2, '0');
-  minsEl.textContent = m.toString().padStart(2, '0');
-  secsEl.textContent = s.toString().padStart(2, '0');
+
+  if (timeLeft > 0) {
+    let h = Math.floor(timeLeft / 3600),
+        m = Math.floor((timeLeft % 3600) / 60),
+        s = timeLeft % 60;
+    hrsEl.textContent = h.toString().padStart(2, '0');
+    minsEl.textContent = m.toString().padStart(2, '0');
+    secsEl.textContent = s.toString().padStart(2, '0');
+  }
 }
 
 function endGame(message) {
   clearInterval(timerInterval);
   timerActive = false;
-  localStorage.removeItem("killer_end_time");
   gameOver = true;
+  localStorage.setItem("killer_game_over", true);
 
   const photos = ["IMG_2962.jpeg", "IMG_2963.jpeg"];
   const randomPhoto = photos[Math.floor(Math.random() * photos.length)];
   deathImage.src = randomPhoto;
   deathImage.style.display = "block";
+  localStorage.setItem("killer_death_photo", randomPhoto);
 
-  clearTimeout(photoTimeout);
-  photoTimeout = setTimeout(() => {
-    deathImage.style.display = "none";
-  }, 30000);
+  document.getElementById('result').innerText = message;
+}
 
-  document.getElementById('result').innerText = `${message}\n\n` + mantisArt();
+function hideDeathImage() {
+  deathImage.style.display = "none";
 }
 
 function submitAnswer() {
   let ans = document.getElementById('userAnswer').value.trim().toLowerCase();
   if (ans === "mantis" && gameOver) {
-    clearTimeout(photoTimeout);
     deathImage.style.display = "none";
     endTime = Math.floor(Date.now() / 1000) + totalTime;
     guessesLeft = 3;
     professionGuessed = false;
     gameOver = false;
     localStorage.setItem("killer_end_time", endTime);
+    localStorage.setItem("killer_guesses", guessesLeft);
+    localStorage.setItem("killer_game_over", false);
     startTimer();
     document.getElementById('result').textContent = "";
-    guessesEl.textContent = guessesLeft;
-    clueEl.style.display = "none"; // Hide clue on restart
-    return;
-  } else if (ans === "mantis" && !gameOver) {
-    document.getElementById('result').innerText = "You can't restart while the game is active.";
     return;
   }
 
@@ -320,35 +232,21 @@ function submitAnswer() {
       endTime += 900;
       localStorage.setItem("killer_end_time", endTime);
       updateClock();
-      document.getElementById('result').innerText = "CORRECT PROFESSION! +15 MIN BONUS.";
+      document.getElementById('result').textContent = "CORRECT PROFESSION! +15 MIN BONUS.";
     } else {
-      document.getElementById('result').innerText = "You’ve already guessed my profession. That won’t help you now.";
+      document.getElementById('result').textContent = "You’ve already guessed my profession. That won’t help you now.";
     }
   } else {
     guessesLeft--;
+    localStorage.setItem("killer_guesses", guessesLeft);
     guessesEl.textContent = guessesLeft;
     if (guessesLeft <= 0) {
       endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nHOW DOES IT FEEL TO CAUSE A DEATH?\nTYPE \"MANTIS\" TO PLAY AGAIN.\nFIND ME IF YOU CAN. :)");
     } else {
-      let warning = (guessesLeft === 1)
-        ? "This is your last chance. Can you bear the responsibility of her death? Was it worth it?"
-        : `INCORRECT. THE CLOCK TICKS... (${guessesLeft} guesses left)`;
-      document.getElementById('result').innerText = warning;
+      document.getElementById('result').innerText = `INCORRECT. THE CLOCK TICKS... (${guessesLeft} guesses left)`;
     }
   }
 }
-
-window.addEventListener('load', () => {
-  const savedEndTime = localStorage.getItem("killer_end_time");
-  if (savedEndTime) {
-    endTime = parseInt(savedEndTime, 10);
-    startTimer();
-  } else {
-    endTime = Math.floor(Date.now() / 1000) + totalTime;
-    localStorage.setItem("killer_end_time", endTime);
-    startTimer();
-  }
-});
 </script>
 </body>
 </html>
