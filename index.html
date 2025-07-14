@@ -82,6 +82,7 @@
     }
     .blink {
       animation: blinker 1s step-start infinite;
+      color: #ff4444;
     }
     @keyframes blinker {
       50% { opacity: 0; }
@@ -101,7 +102,7 @@
       <span class="digit" id="mins">00</span><span class="separator">:</span>
       <span class="digit" id="secs">00</span>
     </div>
-    <div id="question">WHERE DO I WORK? (3 guesses left)</div>
+    <div id="question">WHERE DO I WORK? (<span id="guesses">3</span> guesses left)</div>
     <input id="userAnswer" type="text" placeholder="> Type your answer..." />
     <button onclick="submitAnswer()">SUBMIT</button>
     <div id="result"></div>
@@ -118,7 +119,8 @@ const totalTime = 7200; // 2 hours
 let timerActive = false;
 let timerInterval;
 let endTime;
-let guessesLeft = 3; // 🆕 Add guess counter
+let guessesLeft = 3; // 🆕 Track guesses
+let professionGuessed = false; // 🆕 Track if profession guessed
 
 const workplace = ["kyoto uni", "kyoto university", "kyotou"];
 const profession = ["entomologist", "professor", "teacher"];
@@ -127,6 +129,7 @@ const hrsEl = document.getElementById('hrs'),
       minsEl = document.getElementById('mins'),
       secsEl = document.getElementById('secs');
 const questionEl = document.getElementById('question');
+const guessesEl = document.getElementById('guesses');
 
 function mantisArt() {
   return `
@@ -211,10 +214,12 @@ function submitAnswer() {
   if (ans === "mantis") {
     endTime = Math.floor(Date.now() / 1000) + totalTime;
     guessesLeft = 3; // reset guesses
+    professionGuessed = false; // reset profession
     localStorage.setItem("killer_end_time", endTime);
     startTimer();
     document.getElementById('result').textContent = "";
-    questionEl.textContent = `WHERE DO I WORK? (${guessesLeft} guesses left)`;
+    guessesEl.textContent = guessesLeft;
+    questionEl.innerHTML = `WHERE DO I WORK? (<span id="guesses">${guessesLeft}</span> guesses left)`;
     return;
   }
   if (!timerActive || guessesLeft <= 0) return;
@@ -222,18 +227,23 @@ function submitAnswer() {
   if (workplace.includes(ans)) {
     endGame("WELL DONE. YOU’VE FOUND ME.\nSHE'LL LIVE ANOTHER DAY.\nWILL YOU REPORT ME TO THE METRO POLICE?");
   } else if (profession.includes(ans)) {
-    endTime += 900;
-    localStorage.setItem("killer_end_time", endTime);
-    updateClock();
-    document.getElementById('result').textContent="CORRECT PROFESSION! +15 MIN BONUS.";
+    if (!professionGuessed) {
+      professionGuessed = true;
+      endTime += 900;
+      localStorage.setItem("killer_end_time", endTime);
+      updateClock();
+      document.getElementById('result').textContent="CORRECT PROFESSION! +15 MIN BONUS.";
+    } else {
+      document.getElementById('result').textContent="You’ve already guessed my profession. That won’t help you now.";
+    }
   } else {
     guessesLeft--;
+    guessesEl.textContent = guessesLeft;
     if (guessesLeft <= 0) {
       endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.");
     } else {
-      questionEl.textContent = `WHERE DO I WORK? (${guessesLeft} guesses left)`;
-      const taunt = "INCORRECT. THE CLOCK TICKS...";
-      typeWriterEffect(taunt, () => {});
+      let warning = (guessesLeft === 1) ? "INCORRECT. THIS IS YOUR LAST CHANCE." : `INCORRECT. THE CLOCK TICKS... (${guessesLeft} guesses left)`;
+      typeWriterEffect(warning, () => {});
     }
   }
 }
