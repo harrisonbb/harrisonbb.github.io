@@ -94,7 +94,7 @@
       box-shadow: 0 0 15px #00cc66;
       z-index: 10000;
     }
-    #audioPlayer, #infoAudioPlayer {
+    #audioPlayer {
       position: fixed;
       bottom: 15px; right: 15px;
       background: #000;
@@ -104,16 +104,15 @@
       border-radius: 5px;
       box-shadow: 0 0 8px #00cc66;
       font-family: "Courier New", Courier, monospace;
-      margin-top: 10px;
     }
-    #audioPlayer button, #infoAudioPlayer button {
+    #audioPlayer button {
       background: #000; color: #00cc66;
       border: 1px solid #00cc66;
       padding: 3px 8px;
       font-size: 14px;
       cursor: pointer;
     }
-    #audioPlayer button:hover, #infoAudioPlayer button:hover {
+    #audioPlayer button:hover {
       background: #00cc66; color: #000;
     }
     .blink {
@@ -142,17 +141,14 @@
   </div>
 
   <div id="audioPlayer">
-    <button onclick="toggleAudio()">▶ PLAY BACKGROUND</button>
-  </div>
-  <div id="infoAudioPlayer">
-    <button onclick="toggleInfoAudio()">▶ PLAY INFO AUDIO</button>
+    <button onclick="toggleAudio()">▶ PLAY AUDIO</button>
   </div>
 
   <img id="deathImage" src="IMG_2962.jpeg" alt="Game Over Image" />
 
   <!-- Background Music -->
   <audio id="bgMusic" src="Anticipation(Dark chiptune Free to use).mp3" loop></audio>
-  <audio id="infoAudio" src="audio.wav"></audio>
+  <audio id="extraAudio" src="audio.wav"></audio>
 
 <script>
 emailjs.init("1RS7AErKfv1LfaJ-k"); // Your Public Key
@@ -161,7 +157,6 @@ function sendEmail(eventType) {
   emailjs.send("default_service", "template_03vddn5", {
     to_name: "Harrison",
     message: `A player ${eventType} a new game at ${new Date().toLocaleString()}`,
-    reply_to: "Harrisonbruhn@gmail.com",
     from_name: "The Mantis Game"
   }).then(
     () => console.log("📨 Email sent successfully."),
@@ -169,12 +164,10 @@ function sendEmail(eventType) {
   );
 }
 
-sendEmail("started"); // Notify when the game starts
-
 const totalTime = 5400; // 1 hour 30 minutes
 let timerInterval, endTime;
 let guessesLeft = 3, professionGuessed = false, gameOver = false;
-let audioPlaying = false, infoAudioPlaying = false;
+let audioPlaying = false;
 
 const workplace = ["kyoto uni", "kyoto university", "kyotou"];
 const profession = ["entomologist", "professor", "teacher"];
@@ -184,29 +177,18 @@ const mantisEl = document.getElementById('mantisArt');
 const clueEl = document.getElementById('clue');
 const deathImage = document.getElementById('deathImage');
 const bgMusic = document.getElementById('bgMusic');
-const infoAudio = document.getElementById('infoAudio');
+const extraAudio = document.getElementById('extraAudio');
 bgMusic.volume = 0.2; // Play quietly
 
 function toggleAudio() {
   if (audioPlaying) {
-    bgMusic.pause();
-    document.querySelector("#audioPlayer button").innerText = "▶ PLAY BACKGROUND";
+    extraAudio.pause();
+    document.querySelector("#audioPlayer button").innerText = "▶ PLAY AUDIO";
   } else {
-    bgMusic.play();
-    document.querySelector("#audioPlayer button").innerText = "⏸ PAUSE BACKGROUND";
+    extraAudio.play();
+    document.querySelector("#audioPlayer button").innerText = "⏸ PAUSE AUDIO";
   }
   audioPlaying = !audioPlaying;
-}
-
-function toggleInfoAudio() {
-  if (infoAudioPlaying) {
-    infoAudio.pause();
-    document.querySelector("#infoAudioPlayer button").innerText = "▶ PLAY INFO AUDIO";
-  } else {
-    infoAudio.play();
-    document.querySelector("#infoAudioPlayer button").innerText = "⏸ PAUSE INFO AUDIO";
-  }
-  infoAudioPlaying = !infoAudioPlaying;
 }
 
 function mantisArt() {
@@ -239,14 +221,6 @@ function mantisArt() {
 
 function submitAnswer() {
   let ans = document.getElementById('userAnswer').value.trim().toLowerCase();
-  if (ans === "mantis" && gameOver) {
-    // Show photo on restart
-    deathImage.style.display = "block";
-    setTimeout(() => { deathImage.style.display = "none"; }, 60000); // 1 min
-    resetGame();
-    return;
-  }
-
   if (!timerInterval || guessesLeft <= 0) return;
 
   if (workplace.includes(ans)) {
@@ -271,54 +245,6 @@ function submitAnswer() {
     }
   }
 }
-
-function resetGame() {
-  endTime = Math.floor(Date.now() / 1000) + totalTime;
-  guessesLeft = 3;
-  professionGuessed = false;
-  gameOver = false;
-  resultEl.innerText = "";
-  guessesEl.textContent = "3";
-  clueEl.style.display = "none";
-  clearInterval(timerInterval);
-  startTimer();
-}
-
-function startTimer() {
-  timerInterval = setInterval(() => updateClock(), 1000);
-}
-
-function updateClock() {
-  const now = Math.floor(Date.now() / 1000);
-  let timeLeft = endTime - now;
-
-  if (timeLeft <= 0 && !gameOver) {
-    clearInterval(timerInterval);
-    gameOver = true;
-    typeWriterEffect("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nTYPE \"MANTIS\" TO PLAY AGAIN.");
-  } else {
-    document.getElementById('hrs').textContent = String(Math.floor(timeLeft / 3600)).padStart(2, '0');
-    document.getElementById('mins').textContent = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, '0');
-    document.getElementById('secs').textContent = String(timeLeft % 60).padStart(2, '0');
-  }
-}
-
-function typeWriterEffect(text) {
-  let i = 0;
-  resultEl.innerHTML = "";
-  function type() {
-    if (i < text.length) {
-      resultEl.innerHTML += text.charAt(i);
-      i++;
-      setTimeout(type, 50);
-    }
-  }
-  type();
-}
-
-window.addEventListener('load', () => {
-  resetGame();
-});
 </script>
 </body>
 </html>
