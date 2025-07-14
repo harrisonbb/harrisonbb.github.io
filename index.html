@@ -88,6 +88,13 @@
       line-height: 1.2;
       overflow-wrap: break-word;
     }
+    .blink {
+      color: #ff4444;
+      animation: blinker 1s step-start infinite;
+    }
+    @keyframes blinker {
+      50% { opacity: 0; }
+    }
     #clue {
       margin-top: 20px;
       color: #00cc66;
@@ -108,7 +115,36 @@
       z-index: 10000;
       cursor: pointer;
     }
+    #audioPlayer {
+      position: fixed;
+      bottom: 15px;
+      right: 15px;
+      background: #000;
+      border: 1px solid #00cc66;
+      color: #00cc66;
+      padding: 6px 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 8px #00cc66;
+      font-family: "Courier New", Courier, monospace;
+    }
+    #audioPlayer button {
+      background: #000;
+      color: #00cc66;
+      border: 1px solid #00cc66;
+      padding: 3px 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #audioPlayer button:hover {
+      background: #00cc66;
+      color: #000;
+    }
   </style>
+  <!-- ✅ Include EmailJS SDK -->
+  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <script>
+    emailjs.init("1RS7AErKfv1LfaJ-k"); // Your PUBLIC KEY
+  </script>
 </head>
 <body>
 
@@ -125,22 +161,40 @@
     <div id="clue"></div>
   </div>
 
+  <div id="audioPlayer">
+    <button onclick="toggleAudio()">▶ PLAY AUDIO</button>
+  </div>
+
   <img id="deathImage" src="" alt="Game Over Image" onclick="hideDeathImage()" />
 
 <script>
 const totalTime = 5400; // 1 hour 30 min
 let timerInterval, endTime;
-let guessesLeft = 3, professionGuessed = false, gameOver = false;
+let guessesLeft = 3, professionGuessed = false, gameOver = false, audioPlaying = false;
 
 const workplace = ["kyoto uni", "kyoto university", "kyotou"];
 const profession = ["entomologist", "professor", "teacher"];
+const audio = new Audio("audio.wav");
+
+function toggleAudio() {
+  if (audioPlaying) {
+    audio.pause();
+    document.querySelector("#audioPlayer button").innerText = "▶ PLAY AUDIO";
+  } else {
+    audio.play();
+    document.querySelector("#audioPlayer button").innerText = "▶ PAUSE AUDIO";
+  }
+  audioPlaying = !audioPlaying;
+}
 
 const hrsEl = document.getElementById('hrs'),
       minsEl = document.getElementById('mins'),
       secsEl = document.getElementById('secs'),
       guessesEl = document.getElementById('guesses'),
       clueEl = document.getElementById('clue'),
-      deathImage = document.getElementById('deathImage');
+      resultEl = document.getElementById('result'),
+      deathImage = document.getElementById('deathImage'),
+      inputField = document.getElementById('userAnswer');
 
 function mantisArt() {
   return `
@@ -170,21 +224,30 @@ function mantisArt() {
   `;
 }
 
-function saveGame() {
-  localStorage.setItem("killer_end_time", endTime);
-  localStorage.setItem("killer_guesses", guessesLeft);
-  localStorage.setItem("killer_game_over", gameOver);
+function typeWriterEffect(text, callback) {
+  let i = 0;
+  resultEl.innerHTML = "";
+  function type() {
+    if (i < text.length) {
+      resultEl.innerHTML += text.charAt(i);
+      i++;
+      setTimeout(type, 70);
+    } else {
+      resultEl.innerHTML += `<br><span class="blink">TICK TOCK. TICK TOCK.</span>`;
+      if (callback) callback();
+    }
+  }
+  type();
 }
 
-function loadGame() {
-  const savedEndTime = localStorage.getItem("killer_end_time");
-  const savedGuesses = localStorage.getItem("killer_guesses");
-  if (savedEndTime && savedGuesses) {
-    endTime = parseInt(savedEndTime, 10);
-    guessesLeft = parseInt(savedGuesses, 10);
-  } else {
-    resetGame();
-  }
+function sendEmailNotification() {
+  emailjs.send("service_xxxxxx", "template_03vddn5", {
+    message: "A new player has started the Cat and Mouse game."
+  }).then(() => {
+    console.log("✅ Email sent to satosatosleuthhh@yahoo.com");
+  }).catch(err => {
+    console.error("❌ Email error:", err);
+  });
 }
 
 function resetGame() {
@@ -192,10 +255,13 @@ function resetGame() {
   guessesLeft = 3;
   professionGuessed = false;
   gameOver = false;
-  saveGame();
+  inputField.disabled = false;
+  inputField.value = "";
+  deathImage.style.display = "none";
 }
 
 function startTimer() {
+  sendEmailNotification(); // ✅ Email sent when game starts
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(updateClock, 1000);
   updateClock();
@@ -206,6 +272,7 @@ function updateClock() {
   let timeLeft = endTime - now;
 
   if (timeLeft === 1800 && clueEl.innerHTML === "") {
+    clueEl.style.display = "block";
     typeWriterEffect("Sometimes the answer is right in front of you...");
   }
 
@@ -218,32 +285,17 @@ function updateClock() {
   }
 }
 
-function typeWriterEffect(text) {
-  let i = 0;
-  clueEl.innerHTML = "";
-  clueEl.style.display = "block";
-  function type() {
-    if (i < text.length) {
-      clueEl.innerHTML += text.charAt(i);
-      i++;
-      setTimeout(type, 60);
-    }
-  }
-  type();
-}
-
 function submitAnswer() {
-  let ans = document.getElementById('userAnswer').value.trim().toLowerCase();
+  let ans = inputField.value.trim().toLowerCase();
   if (ans === "mantis" && gameOver) {
-    deathImage.style.display = "none";
     resetGame();
     startTimer();
-    document.getElementById('result').innerText = "";
+    resultEl.innerText = "";
     guessesEl.textContent = guessesLeft;
     clueEl.style.display = "none";
     return;
   } else if (ans === "mantis" && !gameOver) {
-    document.getElementById('result').innerText = "You can't restart while the game is active.";
+    typeWriterEffect("You can't restart while the game is active.");
     return;
   }
 
@@ -251,19 +303,19 @@ function submitAnswer() {
 
   if (workplace.includes(ans)) {
     clearInterval(timerInterval);
-    timerActive = false;
-    document.getElementById('result').innerText = "WELL DONE. YOU’VE FOUND ME.\nI’d still like to find you one day. Goodbye for now my new friend.\n\n" + mantisArt();
-    gameOver = true; saveGame();
+    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.\nI’d still like to find you one day. Goodbye for now my new friend.\n\n" + mantisArt());
+    gameOver = true;
+    inputField.disabled = true;
   } else if (profession.includes(ans)) {
     if (!professionGuessed) {
       professionGuessed = true;
-      endTime += 900; saveGame();
-      document.getElementById('result').innerText = "CORRECT PROFESSION! +15 MIN BONUS.";
+      endTime += 900;
+      typeWriterEffect("CORRECT PROFESSION! +15 MIN BONUS.");
     } else {
-      document.getElementById('result').innerText = "You’ve already guessed my profession.";
+      typeWriterEffect("You’ve already guessed my profession.");
     }
   } else {
-    guessesLeft--; saveGame();
+    guessesLeft--;
     guessesEl.textContent = guessesLeft;
     if (guessesLeft <= 0) {
       endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\n\n" + mantisArt() + "\nTYPE \"MANTIS\" TO PLAY AGAIN.");
@@ -271,21 +323,20 @@ function submitAnswer() {
       let warning = (guessesLeft === 1)
         ? "This is your last chance. Can you bear the responsibility of her death? Was it worth it?"
         : `INCORRECT. THE CLOCK TICKS... (${guessesLeft} guesses left)`;
-      document.getElementById('result').innerText = warning;
+      typeWriterEffect(warning);
     }
   }
 }
 
 function endGame(message) {
   clearInterval(timerInterval);
-  timerActive = false;
   gameOver = true;
-  saveGame();
+  inputField.disabled = true;
   const photos = ["IMG_2962.jpeg", "IMG_2963.jpeg"];
   const randomPhoto = photos[Math.floor(Math.random() * photos.length)];
   deathImage.src = randomPhoto;
   deathImage.style.display = "block";
-  document.getElementById('result').innerText = message;
+  typeWriterEffect(message);
 }
 
 function hideDeathImage() {
@@ -293,7 +344,7 @@ function hideDeathImage() {
 }
 
 window.addEventListener('load', () => {
-  loadGame();
+  resetGame();
   startTimer();
 });
 </script>
