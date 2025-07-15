@@ -155,12 +155,15 @@ function sendEmail(eventType) {
     to_name: "Harrison",
     message: `A player ${eventType} a new game at ${new Date().toLocaleString()}`,
     from_name: "The Mantis Game"
-  }).catch(err => console.error("EmailJS failed:", err));
+  }).then(
+    () => console.log("📨 Email sent successfully."),
+    (err) => console.error("❌ Email failed:", err)
+  );
 }
 
-const totalTime = 5400;
-let timerInterval, endTime, typeInterval, isTyping = false;
-let guessesLeft = parseInt(localStorage.getItem("guessesLeft")) || 3;
+const totalTime = 5400; // 1 hour 30 minutes
+let timerInterval, endTime, typeInterval;
+let guessesLeft = localStorage.getItem("guessesLeft") ? parseInt(localStorage.getItem("guessesLeft")) : 3;
 let professionGuessed = false, gameOver = false, audioPlaying = false;
 
 const workplace = ["kyoto uni", "kyoto university", "kyotou"];
@@ -174,6 +177,7 @@ const bgMusic = document.getElementById('bgMusic');
 const extraAudio = document.getElementById('extraAudio');
 bgMusic.volume = 0.2;
 
+// Restore timer
 if (localStorage.getItem("endTime")) {
   endTime = parseInt(localStorage.getItem("endTime"));
 } else {
@@ -221,8 +225,7 @@ function mantisArt() {
 }
 
 function typeWriterEffect(text, callback) {
-  if (isTyping) clearInterval(typeInterval);
-  isTyping = true;
+  clearInterval(typeInterval);
   resultEl.innerHTML = "";
   let i = 0;
   typeInterval = setInterval(() => {
@@ -231,10 +234,9 @@ function typeWriterEffect(text, callback) {
     if (i > text.length) {
       clearInterval(typeInterval);
       resultEl.innerHTML = text;
-      isTyping = false;
       if (callback) callback();
     }
-  }, 120);
+  }, 40); // Faster typing speed
 }
 
 function startTimer() {
@@ -253,7 +255,7 @@ function updateClock() {
   }
 
   if (timeLeft <= 0 && !gameOver) {
-    endGame("YOU FAILED TO FIND ME IN TIME.<br>SHE HAS NOW DIED BECAUSE OF YOU.<br>TYPE \"MANTIS\" TO PLAY AGAIN.");
+    endGame("SHE WAS CHOSEN. YOU WERE TESTED.<br>AND NOW SHE’S DEAD BECAUSE OF YOUR CURIOSITY.<br>SUMMON ME AGAIN WITH “MANTIS” IF YOU WISH TO PLAY AGAIN.");
   } else {
     document.getElementById('hrs').textContent = String(Math.floor(timeLeft / 3600)).padStart(2, '0');
     document.getElementById('mins').textContent = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, '0');
@@ -272,7 +274,7 @@ function submitAnswer() {
     return;
   }
 
-  if (!timerInterval || guessesLeft <= 0 || isTyping) return;
+  if (!timerInterval || guessesLeft <= 0) return;
 
   if (workplace.includes(ans)) {
     clearInterval(timerInterval);
@@ -296,7 +298,8 @@ function submitAnswer() {
       mantisEl.textContent = mantisArt();
     }
     if (guessesLeft <= 0) {
-      endGame("YOU FAILED TO FIND ME IN TIME.<br>SHE HAS NOW DIED BECAUSE OF YOU.<br>TYPE \"MANTIS\" TO PLAY AGAIN.");
+      endGame("SHE WAS CHOSEN. YOU WERE TESTED.<br>AND NOW SHE’S DEAD BECAUSE OF YOUR CURIOSITY.<br>SUMMON ME AGAIN WITH “MANTIS” IF YOU WISH TO PLAY AGAIN.");
+      deathImage.style.display = "block";
     } else {
       let warning = (guessesLeft === 1)
         ? "This is your last chance. Can you bear the responsibility of her death?<br><span class='blink'>TICK TOCK. TICK TOCK.</span>"
@@ -309,6 +312,7 @@ function submitAnswer() {
 function endGame(message) {
   clearInterval(timerInterval);
   gameOver = true;
+  deathImage.style.display = "block";
   typeWriterEffect(message);
 }
 
