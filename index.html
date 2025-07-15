@@ -155,15 +155,12 @@ function sendEmail(eventType) {
     to_name: "Harrison",
     message: `A player ${eventType} a new game at ${new Date().toLocaleString()}`,
     from_name: "The Mantis Game"
-  }).then(
-    () => console.log("📨 Email sent successfully."),
-    (err) => console.error("❌ Email failed:", err)
-  );
+  }).catch(err => console.error("EmailJS failed:", err));
 }
 
-const totalTime = 5400; // 1 hour 30 minutes
-let timerInterval, endTime, typeInterval;
-let guessesLeft = localStorage.getItem("guessesLeft") ? parseInt(localStorage.getItem("guessesLeft")) : 3;
+const totalTime = 5400;
+let timerInterval, endTime, typeInterval, isTyping = false;
+let guessesLeft = parseInt(localStorage.getItem("guessesLeft")) || 3;
 let professionGuessed = false, gameOver = false, audioPlaying = false;
 
 const workplace = ["kyoto uni", "kyoto university", "kyotou"];
@@ -177,7 +174,6 @@ const bgMusic = document.getElementById('bgMusic');
 const extraAudio = document.getElementById('extraAudio');
 bgMusic.volume = 0.2;
 
-// Restore timer
 if (localStorage.getItem("endTime")) {
   endTime = parseInt(localStorage.getItem("endTime"));
 } else {
@@ -225,7 +221,8 @@ function mantisArt() {
 }
 
 function typeWriterEffect(text, callback) {
-  clearInterval(typeInterval);
+  if (isTyping) clearInterval(typeInterval);
+  isTyping = true;
   resultEl.innerHTML = "";
   let i = 0;
   typeInterval = setInterval(() => {
@@ -234,9 +231,10 @@ function typeWriterEffect(text, callback) {
     if (i > text.length) {
       clearInterval(typeInterval);
       resultEl.innerHTML = text;
+      isTyping = false;
       if (callback) callback();
     }
-  }, 100);
+  }, 120);
 }
 
 function startTimer() {
@@ -274,7 +272,7 @@ function submitAnswer() {
     return;
   }
 
-  if (!timerInterval || guessesLeft <= 0) return;
+  if (!timerInterval || guessesLeft <= 0 || isTyping) return;
 
   if (workplace.includes(ans)) {
     clearInterval(timerInterval);
