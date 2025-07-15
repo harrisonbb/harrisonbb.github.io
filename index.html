@@ -97,6 +97,19 @@
       box-shadow: 0 0 15px #00cc66;
       z-index: 10000;
     }
+    #playAgainBtn {
+      display: none;
+      background: #000; color: #00cc66;
+      border: 1px solid #00cc66;
+      padding: 6px 10px;
+      margin-right: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    #playAgainBtn:hover {
+      background: #00cc66; color: #000;
+    }
     #audioPlayer {
       position: fixed;
       bottom: 15px; right: 15px;
@@ -136,8 +149,11 @@
       <span class="digit" id="secs">00</span>
     </div>
     <div id="question">WHERE DO I WORK? (<span id="guesses">3</span> guesses left)</div>
-    <input id="userAnswer" type="text" placeholder="> Type your answer..." />
-    <button onclick="submitAnswer()">SUBMIT</button>
+    <div style="display: flex; justify-content: center;">
+      <button id="playAgainBtn" onclick="resetGame()">Play Again :)</button>
+      <input id="userAnswer" type="text" placeholder="> Type your answer..." />
+      <button onclick="submitAnswer()">SUBMIT</button>
+    </div>
     <div id="result"></div>
     <div id="mantisArt"></div>
     <div id="clue"></div>
@@ -155,7 +171,6 @@
 <script>
 emailjs.init("1RS7AErKfv1LfaJ-k");
 
-// Email + Game Variables
 function sendEmail(eventType) {
   emailjs.send("default_service", "template_03vddn5", {
     to_name: "Harrison",
@@ -176,6 +191,7 @@ const guessesEl = document.getElementById('guesses');
 const mantisEl = document.getElementById('mantisArt');
 const clueEl = document.getElementById('clue');
 const deathImage = document.getElementById('deathImage');
+const playAgainBtn = document.getElementById('playAgainBtn');
 const bgMusic = document.getElementById('bgMusic');
 const extraAudio = document.getElementById('extraAudio');
 bgMusic.volume = 0.2;
@@ -189,6 +205,7 @@ if (localStorage.getItem("endTime")) {
 
 if (gameOver) {
   deathImage.style.display = "block";
+  playAgainBtn.style.display = "inline-block";
   setTimeout(() => deathImage.style.display = "none", 30000);
 }
 
@@ -257,7 +274,7 @@ function updateClock() {
   let timeLeft = endTime - now;
 
   if (timeLeft <= 0 && !gameOver) {
-    endGame("SHE WAS CHOSEN. YOU WERE TESTED.<br>AND NOW SHE’S DEAD BECAUSE OF YOUR CURIOSITY.<br>SUMMON ME AGAIN WITH “MANTIS” IF YOU WISH TO PLAY AGAIN.");
+    endGame("SHE WAS CHOSEN. YOU WERE TESTED.<br>AND NOW SHE’S DEAD BECAUSE OF YOUR CURIOSITY.<br>");
   } else {
     document.getElementById('hrs').textContent = String(Math.floor(timeLeft / 3600)).padStart(2, '0');
     document.getElementById('mins').textContent = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, '0');
@@ -267,20 +284,14 @@ function updateClock() {
 
 function submitAnswer() {
   const ans = document.getElementById('userAnswer').value.trim().toLowerCase();
-  if (ans === "mantis" && gameOver) {
-    resetGame();
-    sendEmail("RESTARTED");
-    startTimer();
-    return;
-  }
-
   if (!timerInterval || guessesLeft <= 0 || gameOver) return;
 
   if (workplace.includes(ans)) {
     clearInterval(timerInterval);
-    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.<br>I’D STILL LIKE TO FIND YOU ONE DAY.<br>WILL YOU REPORT ME TO THE METRO POLICE NOW?<br>" + mantisArt());
+    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.<br>" + mantisArt());
     gameOver = true;
     localStorage.setItem("gameOver", "true");
+    playAgainBtn.style.display = "inline-block";
   } else if (profession.includes(ans)) {
     if (!professionGuessed) {
       professionGuessed = true;
@@ -294,18 +305,12 @@ function submitAnswer() {
     guessesLeft--;
     localStorage.setItem("guessesLeft", guessesLeft);
     guessesEl.textContent = guessesLeft === 1 ? "1 guess" : `${guessesLeft} guesses`;
-    if (guessesLeft === 2) {
-      mantisEl.style.display = "block";
-      mantisEl.textContent = mantisArt();
-    }
     if (guessesLeft <= 0) {
-      endGame("SHE WAS CHOSEN. YOU WERE TESTED.<br>AND NOW SHE’S DEAD BECAUSE OF YOUR CURIOSITY.<br>SUMMON ME AGAIN WITH “MANTIS” IF YOU WISH TO PLAY AGAIN.");
-      deathImage.style.display = "block";
-      setTimeout(() => deathImage.style.display = "none", 30000);
+      endGame("SHE WAS CHOSEN. YOU WERE TESTED.<br>");
     } else {
       let warning = (guessesLeft === 1)
-        ? "This is your last chance. Can you bear the responsibility of her death?<br><span class='blink'>TICK TOCK. TICK TOCK.</span>"
-        : `INCORRECT. THE CLOCK TICKS... (${guessesLeft} ${guessesLeft === 1 ? "guess" : "guesses"} left)<br><span class='blink'>TICK TOCK. TICK TOCK.</span>`;
+        ? "This is your last chance.<br><span class='blink'>TICK TOCK. TICK TOCK.</span>"
+        : `INCORRECT. THE CLOCK TICKS... (${guessesLeft} guesses left)<br><span class='blink'>TICK TOCK. TICK TOCK.</span>`;
       typeWriterEffect(warning);
     }
   }
@@ -317,6 +322,7 @@ function endGame(message) {
   localStorage.setItem("gameOver", "true");
   typeWriterEffect(message);
   deathImage.style.display = "block";
+  playAgainBtn.style.display = "inline-block";
   setTimeout(() => deathImage.style.display = "none", 30000);
 }
 
@@ -332,6 +338,8 @@ function resetGame() {
   mantisEl.style.display = "none";
   clueEl.style.display = "none";
   deathImage.style.display = "none";
+  playAgainBtn.style.display = "none";
+  startTimer();
 }
 
 window.addEventListener('load', () => {
