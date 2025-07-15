@@ -130,7 +130,7 @@
       <span class="digit" id="mins">30</span><span class="separator">:</span>
       <span class="digit" id="secs">00</span>
     </div>
-    <div id="question">WHERE DO I WORK? (<span id="guesses">3</span> left)</div>
+    <div id="question">WHERE DO I WORK? (<span id="guesses">3</span> guesses left)</div>
     <input id="userAnswer" type="text" placeholder="> Type your answer..." />
     <button onclick="submitAnswer()">SUBMIT</button>
     <div id="result"></div>
@@ -160,7 +160,7 @@ function sendEmail(eventType) {
 
 const totalTime = 5400;
 let timerInterval, endTime, typeInterval;
-let guessesLeft = parseInt(localStorage.getItem("guessesLeft")) || 3;
+let guessesLeft = 3;
 let professionGuessed = false, gameOver = false, audioPlaying = false;
 
 const workplace = ["kyoto uni", "kyoto university", "kyotou"];
@@ -173,13 +173,6 @@ const deathImage = document.getElementById('deathImage');
 const bgMusic = document.getElementById('bgMusic');
 const extraAudio = document.getElementById('extraAudio');
 bgMusic.volume = 0.2;
-
-if (localStorage.getItem("endTime")) {
-  endTime = parseInt(localStorage.getItem("endTime"));
-} else {
-  endTime = Math.floor(Date.now() / 1000) + totalTime;
-  localStorage.setItem("endTime", endTime);
-}
 
 function toggleAudio() {
   if (audioPlaying) {
@@ -194,21 +187,30 @@ function toggleAudio() {
 
 function mantisArt() {
   return `
-           _                _     
-            '-.          ,-'     
-               '.      ,'     
-                 \\    /     
-                 _|__|_     
-                (,\\--/,,)     
-                /\\Y  Y/     
-              ."  \`><'     
-            ."    /|     
-           /  /  // .-"'y".     
-        _."  /  // / -//-//     
-     _."l   /| || / ,// //     
-  _."  / ',/ | |," ,// //     
+ _                _     
+  '-.          ,-'     
+     '.      ,'     
+       \\    /     
+       _|__|_     
+      (,\\--/,,)     
+      /\\Y  Y/     
+    ."  \`><'     
+  ."    /|     
+ /  /  // .-"'y".     
+_."  /  // / -//-//     
+_."l   /| || / ,// //     
+_."  / ',/ | |," ,// //     
 .-.  _."   ."  ."  | \`  ,//-//     
-`;
+//'.'. _."   _."/ |/    "._."// //     
+//  _\\ \\  _,-" _|  Y          ^  ^     
+//_."  \\'\\" /  / \\  \\._     
+//"    _.\\ \\|  /   "----|====-.     
+_.//   _." \\_\\___/        ||     \\\\     
+.-" //_.-" \\_."              ||      \\\\     
+_."   //" \\__,"                 ||       \\\\     
+."   __//>.-"                     ||        "----     
+"---"" //                           \\               
+  `;
 }
 
 function typeWriterEffect(text, callback) {
@@ -223,11 +225,12 @@ function typeWriterEffect(text, callback) {
       resultEl.innerHTML = text;
       if (callback) callback();
     }
-  }, 50); // Slightly faster typing
+  }, 40); // Faster typing
 }
 
 function startTimer() {
   if (timerInterval) clearInterval(timerInterval);
+  endTime = Math.floor(Date.now() / 1000) + totalTime;
   timerInterval = setInterval(updateClock, 1000);
   updateClock();
 }
@@ -262,20 +265,18 @@ function submitAnswer() {
 
   if (workplace.includes(ans)) {
     clearInterval(timerInterval);
-    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.<br>I’D STILL LIKE TO FIND YOU ONE DAY.<br>WILL YOU REPORT ME TO THE METRO POLICE NOW?");
+    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.<br>I’D STILL LIKE TO FIND YOU ONE DAY.<br>WILL YOU REPORT ME TO THE METRO POLICE NOW?<br>" + mantisArt());
     gameOver = true;
   } else if (profession.includes(ans)) {
     if (!professionGuessed) {
       professionGuessed = true;
       endTime += 900;
-      localStorage.setItem("endTime", endTime);
       typeWriterEffect("CORRECT PROFESSION! +15 MIN BONUS.");
     } else {
       typeWriterEffect("You’ve already guessed my profession.");
     }
   } else {
     guessesLeft--;
-    localStorage.setItem("guessesLeft", guessesLeft);
     guessesEl.textContent = guessesLeft === 1 ? "1 guess" : `${guessesLeft} guesses`;
     if (guessesLeft === 2) {
       mantisEl.style.display = "block";
@@ -303,8 +304,6 @@ function resetGame() {
   guessesLeft = 3;
   professionGuessed = false;
   gameOver = false;
-  localStorage.setItem("guessesLeft", guessesLeft);
-  localStorage.setItem("endTime", Math.floor(Date.now() / 1000) + totalTime);
   document.getElementById('userAnswer').value = "";
   resultEl.innerHTML = "";
   mantisEl.style.display = "none";
@@ -313,7 +312,7 @@ function resetGame() {
 }
 
 window.addEventListener('load', () => {
-  startTimer();
+  resetGame(); // Always reset on page load
   sendEmail("STARTED");
   bgMusic.play().catch(() => {
     console.log("Autoplay blocked; will start on user click.");
