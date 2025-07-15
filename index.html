@@ -22,9 +22,11 @@
       content: ""; position: fixed; top: 0; left: 0;
       width: 100%; height: 100%;
       background: repeating-linear-gradient(
-        0deg, rgba(0, 255, 102, 0.04),
+        0deg,
+        rgba(0, 255, 102, 0.04),
         rgba(0, 255, 102, 0.04) 2px,
-        transparent 2px, transparent 4px
+        transparent 2px,
+        transparent 4px
       );
       z-index: 999; pointer-events: none;
       animation: flicker 0.2s infinite;
@@ -39,8 +41,11 @@
       box-shadow: inset 0 0 10px #003300, 0 0 15px #00cc66;
       border-radius: 8px;
       padding: 15px;
-      width: 90vw; max-width: 800px;
-      height: auto; overflow: auto; position: relative;
+      width: 90vw;
+      max-width: 800px;
+      height: auto;
+      overflow: auto;
+      position: relative;
     }
     .flip-clock {
       display: flex; justify-content: center; gap: 8px;
@@ -53,7 +58,8 @@
     input, button {
       background: #000; color: #00cc66;
       border: 1px solid #00cc66;
-      padding: 6px 12px; margin: 8px; font-size: 16px;
+      padding: 6px 12px; margin: 8px;
+      font-size: 16px;
       text-shadow: 0 0 3px #00cc66;
     }
     button:hover {
@@ -81,13 +87,34 @@
     }
     #deathImage {
       display: none;
+      opacity: 0.7;
       position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       max-width: 90vw; max-height: 90vh;
       border: 2px solid #00cc66;
       box-shadow: 0 0 15px #00cc66;
-      opacity: 0.6; /* semi-transparent */
       z-index: 10000;
+    }
+    #audioPlayer {
+      position: fixed;
+      bottom: 15px; right: 15px;
+      background: #000;
+      border: 1px solid #00cc66;
+      color: #00cc66;
+      padding: 6px 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 8px #00cc66;
+      font-family: "Courier New", Courier, monospace;
+    }
+    #audioPlayer button {
+      background: #000; color: #00cc66;
+      border: 1px solid #00cc66;
+      padding: 3px 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #audioPlayer button:hover {
+      background: #00cc66; color: #000;
     }
     .blink {
       color: #ff4444;
@@ -99,7 +126,6 @@
   </style>
 </head>
 <body>
-
   <div class="crt">
     <div class="flip-clock" id="timer">
       <span class="digit" id="hrs">01</span><span class="separator">:</span>
@@ -114,22 +140,49 @@
     <div id="clue"></div>
   </div>
 
+  <div id="audioPlayer">
+    <button onclick="toggleAudio()">▶ PLAY AUDIO</button>
+  </div>
+
   <img id="deathImage" src="IMG_2962.jpeg" alt="Game Over Image" />
 
   <audio id="bgMusic" src="Anticipation(Dark chiptune Free to use).mp3" loop></audio>
+  <audio id="extraAudio" src="audio.wav"></audio>
 
 <script>
 emailjs.init("1RS7AErKfv1LfaJ-k");
 
-// Persistent state
-let savedState = JSON.parse(localStorage.getItem("mantisState")) || {};
-const totalTime = 5400;
-let endTime = savedState.endTime || Math.floor(Date.now() / 1000) + totalTime;
-let guessesLeft = savedState.guessesLeft || 3;
-let professionGuessed = savedState.professionGuessed || false;
-let gameOver = savedState.gameOver || false;
+function sendEmail(eventType) {
+  emailjs.send("default_service", "template_03vddn5", {
+    to_name: "Harrison",
+    message: `A player ${eventType} a new game at ${new Date().toLocaleString()}`,
+    from_name: "The Mantis Game"
+  }).then(
+    () => console.log("📨 Email sent successfully."),
+    (err) => console.error("❌ Email failed:", err)
+  );
+}
 
-let timerInterval;
+const totalTime = 5400; // 1 hour 30 minutes
+let timerInterval, endTime;
+let guessesLeft, professionGuessed = false, gameOver = false;
+let audioPlaying = false;
+let photoTimeout;
+
+// Load persistent data
+if (localStorage.getItem("mantisEndTime")) {
+  endTime = parseInt(localStorage.getItem("mantisEndTime"));
+} else {
+  endTime = Math.floor(Date.now() / 1000) + totalTime;
+  localStorage.setItem("mantisEndTime", endTime);
+}
+
+if (localStorage.getItem("mantisGuesses")) {
+  guessesLeft = parseInt(localStorage.getItem("mantisGuesses"));
+} else {
+  guessesLeft = 3;
+  localStorage.setItem("mantisGuesses", guessesLeft);
+}
 
 const workplace = ["kyoto uni", "kyoto university", "kyotou"];
 const profession = ["entomologist", "professor", "teacher"];
@@ -139,20 +192,18 @@ const mantisEl = document.getElementById('mantisArt');
 const clueEl = document.getElementById('clue');
 const deathImage = document.getElementById('deathImage');
 const bgMusic = document.getElementById('bgMusic');
+const extraAudio = document.getElementById('extraAudio');
 bgMusic.volume = 0.2;
 
-function saveState() {
-  localStorage.setItem("mantisState", JSON.stringify({
-    endTime, guessesLeft, professionGuessed, gameOver
-  }));
-}
-
-function sendEmail(eventType) {
-  emailjs.send("default_service", "template_03vddn5", {
-    to_name: "Harrison",
-    message: `A player ${eventType} a new game at ${new Date().toLocaleString()}`,
-    from_name: "The Mantis Game"
-  });
+function toggleAudio() {
+  if (audioPlaying) {
+    extraAudio.pause();
+    document.querySelector("#audioPlayer button").innerText = "▶ PLAY AUDIO";
+  } else {
+    extraAudio.play();
+    document.querySelector("#audioPlayer button").innerText = "⏸ PAUSE AUDIO";
+  }
+  audioPlaying = !audioPlaying;
 }
 
 function mantisArt() {
@@ -190,12 +241,7 @@ function typeWriterEffect(text, callback) {
     if (i < text.length) {
       resultEl.innerHTML += text.charAt(i);
       i++;
-      // Random pause effect
-      if (Math.random() < 0.05) {
-        setTimeout(type, 500 + Math.random() * 500);
-      } else {
-        setTimeout(type, 120);
-      }
+      setTimeout(type, 100); // Slower typing speed
     } else if (callback) callback();
   }
   type();
@@ -212,9 +258,8 @@ function updateClock() {
   let timeLeft = endTime - now;
 
   if (timeLeft <= 0 && !gameOver) {
-    endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nTYPE \"MANTIS\" TO PLAY AGAIN.");
+    endGame("YOU FAILED TO FIND ME IN TIME.<br>SHE HAS NOW DIED BECAUSE OF YOU.<br>TYPE \"MANTIS\" TO PLAY AGAIN.");
   } else {
-    saveState();
     let h = Math.floor(timeLeft / 3600);
     let m = Math.floor((timeLeft % 3600) / 60);
     let s = timeLeft % 60;
@@ -222,49 +267,47 @@ function updateClock() {
     document.getElementById('mins').textContent = String(m).padStart(2, '0');
     document.getElementById('secs').textContent = String(s).padStart(2, '0');
   }
-
-  if (timeLeft === 1800 && !gameOver) {
-    clueEl.style.display = "block";
-    clueEl.textContent = "If you can guess my profession I’ll give you 15 minutes extra :)";
-  }
 }
 
 function submitAnswer() {
   const ans = document.getElementById('userAnswer').value.trim().toLowerCase();
   if (ans === "mantis" && gameOver) {
+    localStorage.clear();
     resetGame();
     sendEmail("RESTARTED");
-    startTimer();
     return;
   }
 
-  if (gameOver || !timerInterval) return;
+  if (!timerInterval || guessesLeft <= 0 || gameOver) return;
 
   if (workplace.includes(ans)) {
     clearInterval(timerInterval);
-    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.\nI’D STILL LIKE TO FIND YOU ONE DAY.\nWILL YOU REPORT ME TO THE METRO POLICE NOW?\n" + mantisArt());
+    localStorage.clear();
+    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.<br>I’D STILL LIKE TO FIND YOU ONE DAY.<br>WILL YOU REPORT ME TO THE METRO POLICE NOW?<br>" + mantisArt());
     gameOver = true;
   } else if (profession.includes(ans)) {
     if (!professionGuessed) {
       professionGuessed = true;
       endTime += 900;
+      localStorage.setItem("mantisEndTime", endTime);
       typeWriterEffect("CORRECT PROFESSION! +15 MIN BONUS.");
     } else {
       typeWriterEffect("You’ve already guessed my profession.");
     }
   } else {
     guessesLeft--;
+    localStorage.setItem("mantisGuesses", guessesLeft);
     guessesEl.textContent = guessesLeft === 1 ? "1 guess" : `${guessesLeft} guesses`;
     if (guessesLeft === 2) {
-      mantisEl.style.display = "block";
+      mantisEl.style.display = "block"; 
       mantisEl.textContent = mantisArt();
     }
     if (guessesLeft <= 0) {
-      endGame("YOU FAILED TO FIND ME IN TIME.\nSHE HAS NOW DIED BECAUSE OF YOU.\nTYPE \"MANTIS\" TO PLAY AGAIN.");
+      endGame("YOU FAILED TO FIND ME IN TIME.<br>SHE HAS NOW DIED BECAUSE OF YOU.<br>TYPE \"MANTIS\" TO PLAY AGAIN.");
     } else {
       let warning = (guessesLeft === 1)
-        ? "This is your last chance. Can you bear the responsibility of her death?\n<span class='blink'>TICK TOCK. TICK TOCK.</span>"
-        : `INCORRECT. THE CLOCK TICKS... (${guessesLeft} guesses left)\n<span class='blink'>TICK TOCK. TICK TOCK.</span>`;
+        ? "This is your last chance. Can you bear the responsibility of her death?<br><span class='blink'>TICK TOCK. TICK TOCK.</span>"
+        : `INCORRECT. THE CLOCK TICKS... (${guessesLeft} guesses left)<br><span class='blink'>TICK TOCK. TICK TOCK.</span>`;
       typeWriterEffect(warning);
     }
   }
@@ -273,26 +316,34 @@ function submitAnswer() {
 function endGame(message) {
   clearInterval(timerInterval);
   gameOver = true;
+  localStorage.clear();
   deathImage.style.display = "block";
-  setTimeout(() => deathImage.style.display = "none", 60000);
   typeWriterEffect(message);
+  photoTimeout = setTimeout(() => {
+    deathImage.style.display = "none";
+  }, 60000); // Photo fades after 1 min
 }
 
 function resetGame() {
   guessesLeft = 3;
+  endTime = Math.floor(Date.now() / 1000) + totalTime;
+  localStorage.setItem("mantisEndTime", endTime);
+  localStorage.setItem("mantisGuesses", guessesLeft);
   professionGuessed = false;
   gameOver = false;
   resultEl.innerHTML = "";
+  document.getElementById('userAnswer').value = "";
   mantisEl.style.display = "none";
   clueEl.style.display = "none";
-  document.getElementById('userAnswer').value = "";
-  saveState();
+  deathImage.style.display = "none";
+  startTimer();
 }
 
 window.addEventListener('load', () => {
-  startTimer();
   sendEmail("STARTED");
+  startTimer();
   bgMusic.play().catch(() => {
+    console.log("Autoplay blocked; will start on user click.");
     document.body.addEventListener("click", () => bgMusic.play(), { once: true });
   });
 });
