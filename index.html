@@ -155,10 +155,7 @@ function sendEmail(eventType) {
     to_name: "Harrison",
     message: `A player ${eventType} a new game at ${new Date().toLocaleString()}`,
     from_name: "The Mantis Game"
-  }).then(
-    () => console.log("📨 Email sent successfully."),
-    (err) => console.error("❌ Email failed:", err)
-  );
+  });
 }
 
 const totalTime = 5400;
@@ -198,29 +195,20 @@ function toggleAudio() {
 function mantisArt() {
   return `
            _                _     
-                                           '-.          ,-'     
-                                              '.      ,'     
-                                                \\    /     
-                                                _|__|_     
-                                               (,\\--/,,)     
-                                               /\\Y  Y/     
-                                             ."  \`><'     
-                                           ."    /|     
-                                          /  /  // .-"'y".     
-                                       _."  /  // / -//-//     
-                                    _."l   /| || / ,// //     
-                                 _."  / ',/ | |," ,// //     
-                     .-.      _."   ."  ."  | \`  ,//-//     
-                    //'.'. _."   _."/ |/    "._."// //     
-                   //  _\\ \\  _,-" _|  Y          ^  ^     
-                  //_."  \\'\\" /  / \\  \\._     
-                 //"    _.\\ \\|  /   "----|====-.     
-              _.//   _." \\_\\___/        ||     \\\\     
-           .-" //_.-" \\_."              ||      \\\\     
-        _."   //" \\__,"                 ||       \\\\     
-      ."   __//>.-"                     ||        "----     
-     "---"" //                           \\               
-  `;
+            '-.          ,-'     
+               '.      ,'     
+                 \\    /     
+                 _|__|_     
+                (,\\--/,,)     
+                /\\Y  Y/     
+              ."  \`><'     
+            ."    /|     
+           /  /  // .-"'y".     
+        _."  /  // / -//-//     
+     _."l   /| || / ,// //     
+  _."  / ',/ | |," ,// //     
+.-.  _."   ."  ."  | \`  ,//-//     
+`;
 }
 
 function typeWriterEffect(text, callback) {
@@ -235,7 +223,7 @@ function typeWriterEffect(text, callback) {
       resultEl.innerHTML = text;
       if (callback) callback();
     }
-  }, 40); // Faster typing
+  }, 50); // Slightly faster typing
 }
 
 function startTimer() {
@@ -248,13 +236,9 @@ function updateClock() {
   const now = Math.floor(Date.now() / 1000);
   let timeLeft = endTime - now;
 
-  if (timeLeft === 1800 && !gameOver) {
-    clueEl.style.display = "block";
-    clueEl.textContent = "If you can guess my profession I’ll give you 15 minutes extra :)";
-  }
-
   if (timeLeft <= 0 && !gameOver) {
     endGame("SHE WAS CHOSEN. YOU WERE TESTED.<br>AND NOW SHE’S DEAD BECAUSE OF YOUR CURIOSITY.<br>SUMMON ME AGAIN WITH “MANTIS” IF YOU WISH TO PLAY AGAIN.");
+    deathImage.style.display = "block";
   } else {
     document.getElementById('hrs').textContent = String(Math.floor(timeLeft / 3600)).padStart(2, '0');
     document.getElementById('mins').textContent = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, '0');
@@ -264,6 +248,7 @@ function updateClock() {
 
 function submitAnswer() {
   const ans = document.getElementById('userAnswer').value.trim().toLowerCase();
+
   if (ans === "mantis" && gameOver) {
     resetGame();
     sendEmail("RESTARTED");
@@ -274,120 +259,6 @@ function submitAnswer() {
   }
 
   if (!timerInterval || guessesLeft <= 0) return;
-
-  if (workplace.includes(ans)) {
-    clearInterval(timerInterval);
-    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.<br>I’D STILL LIKE TO FIND YOU ONE DAY.<br>WILL YOU REPORT ME TO THE METRO POLICE NOW?<br>" + mantisArt());
-    gameOver = true;
-  } else if (profession.includes(ans)) {
-    if (!professionGuessed) {
-      professionGuessed = true;
-      endTime += 900;
-      localStorage.setItem("endTime", endTime);
-      typeWriterEffect("CORRECT PROFESSION! +15 MIN BONUS.");
-    } else {
-      typeWriterEffect("You’ve already guessed my profession.");
-    }
-  } else {
-    guessesLeft--;
-    localStorage.setItem("guessesLeft", guessesLeft);
-    guessesEl.textContent = guessesLeft === 1 ? "1 guess" : `${guessesLeft} guesses`;
-    if (guessesLeft === 2) {
-      mantisEl.style.display = "block";
-      mantisEl.textContent = mantisArt();
-    }
-    if (guessesLeft <= 0) {
-      endGame("SHE WAS CHOSEN. YOU WERE TESTED.<br>AND NOW SHE’S DEAD BECAUSE OF YOUR CURIOSITY.<br>SUMMON ME AGAIN WITH “MANTIS” IF YOU WISH TO PLAY AGAIN.");
-      deathImage.style.display = "block";
-    } else {
-      let warning = (guessesLeft === 1)
-        ? "This is your last chance. Can you bear the responsibility of her death?<br><span class='blink'>TICK TOCK. TICK TOCK.</span>"
-        : `INCORRECT. THE CLOCK TICKS... (${guessesLeft} ${guessesLeft === 1 ? "guess" : "guesses"} left)<br><span class='blink'>TICK TOCK. TICK TOCK.</span>`;
-      typeWriterEffect(warning);
-    }
-  }
-}
-
-function endGame(message) {
-  clearInterval(timerInterval);
-  gameOver = true;
-  typeWriterEffect(message);
-}
-
-function resetGame() {
-  guessesLeft = 3;
-  professionGuessed = false;
-  gameOver = false;
-  localStorage.setItem("guessesLeft", guessesLeft);
-  localStorage.setItem("endTime", Math.floor(Date.now() / 1000) + totalTime);
-  document.getElementById('userAnswer').value = "";
-  resultEl.innerHTML = "";
-  mantisEl.style.display = "none";
-  clueEl.style.display = "none";
-  deathImage.style.display = "none";
-}
-
-window.addEventListener('load', () => {
-  startTimer();
-  sendEmail("STARTED");
-  bgMusic.play().catch(() => {
-    console.log("Autoplay blocked; will start on user click.");
-    document.body.addEventListener("click", () => bgMusic.play(), { once: true });
-  });
-});
-</script>
-</body>
-</html>
-}
-
-function typeWriterEffect(text, callback) {
-  clearInterval(typeInterval);
-  resultEl.innerHTML = "";
-  let i = 0;
-  typeInterval = setInterval(() => {
-    resultEl.innerHTML = text.slice(0, i) + "<span class='blink'>|</span>";
-    i++;
-    if (i > text.length) {
-      clearInterval(typeInterval);
-      resultEl.innerHTML = text;
-      if (callback) callback();
-    }
-  }, 40);
-}
-
-function startTimer() {
-  if (timerInterval) clearInterval(timerInterval);
-  timerInterval = setInterval(updateClock, 1000);
-  updateClock();
-}
-
-function updateClock() {
-  const now = Math.floor(Date.now() / 1000);
-  let timeLeft = endTime - now;
-
-  if (timeLeft <= 0 && !gameOver) {
-    endGame("SHE WAS CHOSEN. YOU WERE TESTED.<br>AND NOW SHE’S DEAD BECAUSE OF YOUR CURIOSITY.<br>SUMMON ME AGAIN WITH “MANTIS” IF YOU WISH TO PLAY AGAIN.");
-    deathImage.style.display = "block";
-  } else {
-    document.getElementById('hrs').textContent = String(Math.floor(timeLeft / 3600)).padStart(2, '0');
-    document.getElementById('mins').textContent = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, '0');
-    document.getElementById('secs').textContent = String(timeLeft % 60).padStart(2, '0');
-  }
-}
-
-function submitAnswer() {
-  const ans = document.getElementById('userAnswer').value.trim().toLowerCase();
-
-  if (ans === "mantis") {
-    resetGame();
-    sendEmail("RESTARTED");
-    deathImage.style.display = "block";
-    setTimeout(() => deathImage.style.display = "none", 60000);
-    startTimer();
-    return;
-  }
-
-  if (gameOver || guessesLeft <= 0) return;
 
   if (workplace.includes(ans)) {
     clearInterval(timerInterval);
