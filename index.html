@@ -22,11 +22,8 @@
       content: ""; position: fixed; top: 0; left: 0;
       width: 100%; height: 100%;
       background: repeating-linear-gradient(
-        0deg,
-        rgba(0, 255, 102, 0.04),
-        rgba(0, 255, 102, 0.04) 2px,
-        transparent 2px,
-        transparent 4px
+        0deg, rgba(0, 255, 102, 0.04), rgba(0, 255, 102, 0.04) 2px,
+        transparent 2px, transparent 4px
       );
       z-index: 999; pointer-events: none;
       animation: flicker 0.2s infinite;
@@ -87,7 +84,7 @@
     }
     #deathImage {
       display: none;
-      opacity: 0.7;
+      opacity: 0.6;
       position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       max-width: 90vw; max-height: 90vh;
@@ -126,6 +123,7 @@
   </style>
 </head>
 <body>
+
   <div class="crt">
     <div class="flip-clock" id="timer">
       <span class="digit" id="hrs">01</span><span class="separator">:</span>
@@ -150,7 +148,7 @@
   <audio id="extraAudio" src="audio.wav"></audio>
 
 <script>
-emailjs.init("1RS7AErKfv1LfaJ-k");
+emailjs.init("1RS7AErKfv1LfaJ-k"); // Your Public Key
 
 function sendEmail(eventType) {
   emailjs.send("default_service", "template_03vddn5", {
@@ -164,25 +162,9 @@ function sendEmail(eventType) {
 }
 
 const totalTime = 5400; // 1 hour 30 minutes
-let timerInterval, endTime;
-let guessesLeft, professionGuessed = false, gameOver = false;
-let audioPlaying = false;
-let photoTimeout;
-
-// Load persistent data
-if (localStorage.getItem("mantisEndTime")) {
-  endTime = parseInt(localStorage.getItem("mantisEndTime"));
-} else {
-  endTime = Math.floor(Date.now() / 1000) + totalTime;
-  localStorage.setItem("mantisEndTime", endTime);
-}
-
-if (localStorage.getItem("mantisGuesses")) {
-  guessesLeft = parseInt(localStorage.getItem("mantisGuesses"));
-} else {
-  guessesLeft = 3;
-  localStorage.setItem("mantisGuesses", guessesLeft);
-}
+let timerInterval, endTime, typeInterval;
+let guessesLeft = localStorage.getItem("guessesLeft") ? parseInt(localStorage.getItem("guessesLeft")) : 3;
+let professionGuessed = false, gameOver = false, audioPlaying = false;
 
 const workplace = ["kyoto uni", "kyoto university", "kyotou"];
 const profession = ["entomologist", "professor", "teacher"];
@@ -194,6 +176,14 @@ const deathImage = document.getElementById('deathImage');
 const bgMusic = document.getElementById('bgMusic');
 const extraAudio = document.getElementById('extraAudio');
 bgMusic.volume = 0.2;
+
+// Restore timer
+if (localStorage.getItem("endTime")) {
+  endTime = parseInt(localStorage.getItem("endTime"));
+} else {
+  endTime = Math.floor(Date.now() / 1000) + totalTime;
+  localStorage.setItem("endTime", endTime);
+}
 
 function toggleAudio() {
   if (audioPlaying) {
@@ -235,16 +225,18 @@ function mantisArt() {
 }
 
 function typeWriterEffect(text, callback) {
+  clearInterval(typeInterval);
   resultEl.innerHTML = "";
   let i = 0;
-  function type() {
-    if (i < text.length) {
-      resultEl.innerHTML += text.charAt(i);
-      i++;
-      setTimeout(type, 100); // Slower typing speed
-    } else if (callback) callback();
-  }
-  type();
+  typeInterval = setInterval(() => {
+    resultEl.innerHTML = text.slice(0, i) + "<span class='blink'>|</span>";
+    i++;
+    if (i > text.length) {
+      clearInterval(typeInterval);
+      resultEl.innerHTML = text;
+      if (callback) callback();
+    }
+  }, 100);
 }
 
 function startTimer() {
@@ -257,49 +249,52 @@ function updateClock() {
   const now = Math.floor(Date.now() / 1000);
   let timeLeft = endTime - now;
 
+  if (timeLeft === 1800 && !gameOver) {
+    clueEl.style.display = "block";
+    clueEl.textContent = "If you can guess my profession I’ll give you 15 minutes extra :)";
+  }
+
   if (timeLeft <= 0 && !gameOver) {
     endGame("YOU FAILED TO FIND ME IN TIME.<br>SHE HAS NOW DIED BECAUSE OF YOU.<br>TYPE \"MANTIS\" TO PLAY AGAIN.");
   } else {
-    let h = Math.floor(timeLeft / 3600);
-    let m = Math.floor((timeLeft % 3600) / 60);
-    let s = timeLeft % 60;
-    document.getElementById('hrs').textContent = String(h).padStart(2, '0');
-    document.getElementById('mins').textContent = String(m).padStart(2, '0');
-    document.getElementById('secs').textContent = String(s).padStart(2, '0');
+    document.getElementById('hrs').textContent = String(Math.floor(timeLeft / 3600)).padStart(2, '0');
+    document.getElementById('mins').textContent = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, '0');
+    document.getElementById('secs').textContent = String(timeLeft % 60).padStart(2, '0');
   }
 }
 
 function submitAnswer() {
   const ans = document.getElementById('userAnswer').value.trim().toLowerCase();
   if (ans === "mantis" && gameOver) {
-    localStorage.clear();
     resetGame();
     sendEmail("RESTARTED");
+    deathImage.style.display = "block";
+    setTimeout(() => deathImage.style.display = "none", 60000);
+    startTimer();
     return;
   }
 
-  if (!timerInterval || guessesLeft <= 0 || gameOver) return;
+  if (!timerInterval || guessesLeft <= 0) return;
 
   if (workplace.includes(ans)) {
     clearInterval(timerInterval);
-    localStorage.clear();
     typeWriterEffect("WELL DONE. YOU’VE FOUND ME.<br>I’D STILL LIKE TO FIND YOU ONE DAY.<br>WILL YOU REPORT ME TO THE METRO POLICE NOW?<br>" + mantisArt());
     gameOver = true;
   } else if (profession.includes(ans)) {
     if (!professionGuessed) {
       professionGuessed = true;
       endTime += 900;
-      localStorage.setItem("mantisEndTime", endTime);
+      localStorage.setItem("endTime", endTime);
       typeWriterEffect("CORRECT PROFESSION! +15 MIN BONUS.");
     } else {
       typeWriterEffect("You’ve already guessed my profession.");
     }
   } else {
     guessesLeft--;
-    localStorage.setItem("mantisGuesses", guessesLeft);
+    localStorage.setItem("guessesLeft", guessesLeft);
     guessesEl.textContent = guessesLeft === 1 ? "1 guess" : `${guessesLeft} guesses`;
     if (guessesLeft === 2) {
-      mantisEl.style.display = "block"; 
+      mantisEl.style.display = "block";
       mantisEl.textContent = mantisArt();
     }
     if (guessesLeft <= 0) {
@@ -307,7 +302,7 @@ function submitAnswer() {
     } else {
       let warning = (guessesLeft === 1)
         ? "This is your last chance. Can you bear the responsibility of her death?<br><span class='blink'>TICK TOCK. TICK TOCK.</span>"
-        : `INCORRECT. THE CLOCK TICKS... (${guessesLeft} guesses left)<br><span class='blink'>TICK TOCK. TICK TOCK.</span>`;
+        : `INCORRECT. THE CLOCK TICKS... (${guessesLeft} ${guessesLeft === 1 ? "guess" : "guesses"} left)<br><span class='blink'>TICK TOCK. TICK TOCK.</span>`;
       typeWriterEffect(warning);
     }
   }
@@ -316,32 +311,25 @@ function submitAnswer() {
 function endGame(message) {
   clearInterval(timerInterval);
   gameOver = true;
-  localStorage.clear();
-  deathImage.style.display = "block";
   typeWriterEffect(message);
-  photoTimeout = setTimeout(() => {
-    deathImage.style.display = "none";
-  }, 60000); // Photo fades after 1 min
 }
 
 function resetGame() {
   guessesLeft = 3;
-  endTime = Math.floor(Date.now() / 1000) + totalTime;
-  localStorage.setItem("mantisEndTime", endTime);
-  localStorage.setItem("mantisGuesses", guessesLeft);
   professionGuessed = false;
   gameOver = false;
-  resultEl.innerHTML = "";
+  localStorage.setItem("guessesLeft", guessesLeft);
+  localStorage.setItem("endTime", Math.floor(Date.now() / 1000) + totalTime);
   document.getElementById('userAnswer').value = "";
+  resultEl.innerHTML = "";
   mantisEl.style.display = "none";
   clueEl.style.display = "none";
   deathImage.style.display = "none";
-  startTimer();
 }
 
 window.addEventListener('load', () => {
-  sendEmail("STARTED");
   startTimer();
+  sendEmail("STARTED");
   bgMusic.play().catch(() => {
     console.log("Autoplay blocked; will start on user click.");
     document.body.addEventListener("click", () => bgMusic.play(), { once: true });
