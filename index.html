@@ -93,16 +93,22 @@
       z-index: 10000;
     }
     #audioPlayer {
-      position: fixed; bottom: 15px; right: 15px;
-      background: #000; border: 1px solid #00cc66;
-      color: #00cc66; padding: 6px 10px;
-      border-radius: 5px; box-shadow: 0 0 8px #00cc66;
+      position: fixed;
+      bottom: 15px; right: 15px;
+      background: #000;
+      border: 1px solid #00cc66;
+      color: #00cc66;
+      padding: 6px 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 8px #00cc66;
       font-family: "Courier New", Courier, monospace;
     }
     #audioPlayer button {
       background: #000; color: #00cc66;
       border: 1px solid #00cc66;
-      padding: 3px 8px; font-size: 14px; cursor: pointer;
+      padding: 3px 8px;
+      font-size: 14px;
+      cursor: pointer;
     }
     #audioPlayer button:hover {
       background: #00cc66; color: #000;
@@ -117,28 +123,32 @@
   </style>
 </head>
 <body>
+
   <div class="crt">
     <div class="flip-clock" id="timer">
       <span class="digit" id="hrs">01</span><span class="separator">:</span>
       <span class="digit" id="mins">30</span><span class="separator">:</span>
       <span class="digit" id="secs">00</span>
     </div>
-    <div id="question">WHERE DO I WORK? (<span id="guesses">3</span> guesses left)</div>
+    <div id="question">WHERE DO I WORK? (<span id="guesses">3</span> left)</div>
     <input id="userAnswer" type="text" placeholder="> Type your answer..." />
     <button onclick="submitAnswer()">SUBMIT</button>
     <div id="result"></div>
     <div id="mantisArt"></div>
     <div id="clue"></div>
   </div>
+
   <div id="audioPlayer">
     <button onclick="toggleAudio()">▶ PLAY AUDIO</button>
   </div>
+
   <img id="deathImage" src="IMG_2962.jpeg" alt="Game Over Image" />
+
   <audio id="bgMusic" src="Anticipation(Dark chiptune Free to use).mp3" loop></audio>
   <audio id="extraAudio" src="audio.wav"></audio>
 
 <script>
-emailjs.init("1RS7AErKfv1LfaJ-k");
+emailjs.init("1RS7AErKfv1LfaJ-k"); // Your Public Key
 
 function sendEmail(eventType) {
   emailjs.send("default_service", "template_03vddn5", {
@@ -151,12 +161,10 @@ function sendEmail(eventType) {
   );
 }
 
-const totalTime = 5400;
+const totalTime = 5400; // 1 hour 30 minutes
 let timerInterval, endTime, typeInterval;
-let guessesLeft = parseInt(localStorage.getItem("guessesLeft")) || 3;
-let professionGuessed = false;
-let gameOver = false;
-let audioPlaying = false;
+let guessesLeft = localStorage.getItem("guessesLeft") ? parseInt(localStorage.getItem("guessesLeft")) : 3;
+let professionGuessed = false, gameOver = false, audioPlaying = false;
 
 const workplace = ["kyoto uni", "kyoto university", "kyotou"];
 const profession = ["entomologist", "professor", "teacher"];
@@ -227,7 +235,7 @@ function typeWriterEffect(text, callback) {
       resultEl.innerHTML = text;
       if (callback) callback();
     }
-  }, 40);
+  }, 40); // Faster typing
 }
 
 function startTimer() {
@@ -240,6 +248,11 @@ function updateClock() {
   const now = Math.floor(Date.now() / 1000);
   let timeLeft = endTime - now;
 
+  if (timeLeft === 1800 && !gameOver) {
+    clueEl.style.display = "block";
+    clueEl.textContent = "If you can guess my profession I’ll give you 15 minutes extra :)";
+  }
+
   if (timeLeft <= 0 && !gameOver) {
     endGame("SHE WAS CHOSEN. YOU WERE TESTED.<br>AND NOW SHE’S DEAD BECAUSE OF YOUR CURIOSITY.<br>SUMMON ME AGAIN WITH “MANTIS” IF YOU WISH TO PLAY AGAIN.");
   } else {
@@ -251,7 +264,7 @@ function updateClock() {
 
 function submitAnswer() {
   const ans = document.getElementById('userAnswer').value.trim().toLowerCase();
-  if (ans === "mantis") {
+  if (ans === "mantis" && gameOver) {
     resetGame();
     sendEmail("RESTARTED");
     deathImage.style.display = "block";
@@ -259,7 +272,8 @@ function submitAnswer() {
     startTimer();
     return;
   }
-  if (gameOver) return;
+
+  if (!timerInterval || guessesLeft <= 0) return;
 
   if (workplace.includes(ans)) {
     clearInterval(timerInterval);
@@ -297,7 +311,6 @@ function submitAnswer() {
 function endGame(message) {
   clearInterval(timerInterval);
   gameOver = true;
-  deathImage.style.display = "block";
   typeWriterEffect(message);
 }
 
@@ -315,7 +328,6 @@ function resetGame() {
 }
 
 window.addEventListener('load', () => {
-  gameOver = false;
   startTimer();
   sendEmail("STARTED");
   bgMusic.play().catch(() => {
