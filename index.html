@@ -84,25 +84,21 @@
     }
     #deathImage {
       display: none;
-      opacity: 0.6;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 80vw;
+      margin-top: 20px;
+      opacity: 0.7;
+      width: 60%;
+      max-width: 500px;
       height: auto;
-      max-height: 80vh;
-      object-fit: contain;
       border: 2px solid #00cc66;
       box-shadow: 0 0 15px #00cc66;
-      z-index: 10000;
+      border-radius: 8px;
     }
     #playAgainBtn {
       display: none;
       background: #000; color: #00cc66;
       border: 1px solid #00cc66;
       padding: 6px 10px;
-      margin-right: 10px;
+      margin-top: 10px;
       font-size: 14px;
       cursor: pointer;
       border-radius: 4px;
@@ -155,6 +151,7 @@
       <button onclick="submitAnswer()">SUBMIT</button>
     </div>
     <div id="result"></div>
+    <img id="deathImage" src="IMG_2962.jpeg" alt="Game Over Image" />
     <div id="mantisArt"></div>
     <div id="clue"></div>
   </div>
@@ -162,8 +159,6 @@
   <div id="audioPlayer">
     <button onclick="toggleAudio()">▶ PLAY AUDIO</button>
   </div>
-
-  <img id="deathImage" src="IMG_2962.jpeg" alt="Game Over Image" />
 
   <audio id="bgMusic" src="Anticipation(Dark chiptune Free to use).mp3" loop></audio>
   <audio id="extraAudio" src="audio.wav"></audio>
@@ -198,7 +193,6 @@ const bgMusic = document.getElementById('bgMusic');
 const extraAudio = document.getElementById('extraAudio');
 bgMusic.volume = 0.2;
 
-// Ensure fresh start for first-time visitors
 if (!localStorage.getItem("visited")) {
   localStorage.setItem("visited", "true");
   localStorage.setItem("gameOver", "false");
@@ -217,7 +211,6 @@ if (localStorage.getItem("endTime")) {
 if (gameOver) {
   deathImage.style.display = "block";
   playAgainBtn.style.display = "inline-block";
-  setTimeout(() => deathImage.style.display = "none", 30000);
 }
 
 function toggleAudio() {
@@ -303,6 +296,7 @@ function submitAnswer() {
     gameOver = true;
     localStorage.setItem("gameOver", "true");
     playAgainBtn.style.display = "inline-block";
+    deathImage.style.display = "block";
   } else if (profession.includes(ans)) {
     if (!professionGuessed) {
       professionGuessed = true;
@@ -334,7 +328,6 @@ function endGame(message) {
   typeWriterEffect(message);
   deathImage.style.display = "block";
   playAgainBtn.style.display = "inline-block";
-  setTimeout(() => deathImage.style.display = "none", 30000);
 }
 
 function resetGame() {
