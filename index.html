@@ -182,7 +182,9 @@ function sendEmail(eventType) {
 const totalTime = 5400;
 let timerInterval, endTime, typeInterval;
 let guessesLeft = parseInt(localStorage.getItem("guessesLeft")) || 3;
-let professionGuessed = false, gameOver = localStorage.getItem("gameOver") === "true", audioPlaying = false;
+let professionGuessed = false;
+let gameOver = localStorage.getItem("gameOver") === "true";
+let audioPlaying = false;
 
 const workplace = ["kyoto uni", "kyoto university", "kyotou"];
 const profession = ["entomologist", "professor", "teacher"];
@@ -195,6 +197,15 @@ const playAgainBtn = document.getElementById('playAgainBtn');
 const bgMusic = document.getElementById('bgMusic');
 const extraAudio = document.getElementById('extraAudio');
 bgMusic.volume = 0.2;
+
+// Ensure fresh start for first-time visitors
+if (!localStorage.getItem("visited")) {
+  localStorage.setItem("visited", "true");
+  localStorage.setItem("gameOver", "false");
+  localStorage.setItem("guessesLeft", "3");
+  localStorage.setItem("endTime", Math.floor(Date.now() / 1000) + totalTime);
+  gameOver = false;
+}
 
 if (localStorage.getItem("endTime")) {
   endTime = parseInt(localStorage.getItem("endTime"));
@@ -274,7 +285,7 @@ function updateClock() {
   let timeLeft = endTime - now;
 
   if (timeLeft <= 0 && !gameOver) {
-    endGame("SHE WAS CHOSEN. YOU WERE TESTED.<br>AND NOW SHE’S DEAD BECAUSE OF YOUR CURIOSITY.<br>");
+    endGame("SHE WAS CHOSEN. YOU WERE TESTED.<br>");
   } else {
     document.getElementById('hrs').textContent = String(Math.floor(timeLeft / 3600)).padStart(2, '0');
     document.getElementById('mins').textContent = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, '0');
