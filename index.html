@@ -85,10 +85,17 @@
     #deathImage {
       display: none;
       opacity: 0.6;
-      margin-top: 15px;
-      max-width: 90%;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80vw;
+      height: auto;
+      max-height: 80vh;
+      object-fit: contain;
       border: 2px solid #00cc66;
       box-shadow: 0 0 15px #00cc66;
+      z-index: 10000;
     }
     #audioPlayer {
       position: fixed;
@@ -134,12 +141,13 @@
     <div id="result"></div>
     <div id="mantisArt"></div>
     <div id="clue"></div>
-    <img id="deathImage" src="IMG_2962.jpeg" alt="Game Over Image" />
   </div>
 
   <div id="audioPlayer">
     <button onclick="toggleAudio()">▶ PLAY AUDIO</button>
   </div>
+
+  <img id="deathImage" src="IMG_2962.jpeg" alt="Game Over Image" />
 
   <audio id="bgMusic" src="Anticipation(Dark chiptune Free to use).mp3" loop></audio>
   <audio id="extraAudio" src="audio.wav"></audio>
@@ -147,13 +155,19 @@
 <script>
 emailjs.init("1RS7AErKfv1LfaJ-k");
 
+// Email + Game Variables
+function sendEmail(eventType) {
+  emailjs.send("default_service", "template_03vddn5", {
+    to_name: "Harrison",
+    message: `A player ${eventType} a new game at ${new Date().toLocaleString()}`,
+    from_name: "The Mantis Game"
+  });
+}
+
 const totalTime = 5400;
-let timerInterval, typeInterval;
-let endTime = parseInt(localStorage.getItem("endTime")) || Math.floor(Date.now() / 1000) + totalTime;
+let timerInterval, endTime, typeInterval;
 let guessesLeft = parseInt(localStorage.getItem("guessesLeft")) || 3;
-let professionGuessed = false;
-let gameOver = false;
-let audioPlaying = false;
+let professionGuessed = false, gameOver = localStorage.getItem("gameOver") === "true", audioPlaying = false;
 
 const workplace = ["kyoto uni", "kyoto university", "kyotou"];
 const profession = ["entomologist", "professor", "teacher"];
@@ -165,6 +179,18 @@ const deathImage = document.getElementById('deathImage');
 const bgMusic = document.getElementById('bgMusic');
 const extraAudio = document.getElementById('extraAudio');
 bgMusic.volume = 0.2;
+
+if (localStorage.getItem("endTime")) {
+  endTime = parseInt(localStorage.getItem("endTime"));
+} else {
+  endTime = Math.floor(Date.now() / 1000) + totalTime;
+  localStorage.setItem("endTime", endTime);
+}
+
+if (gameOver) {
+  deathImage.style.display = "block";
+  setTimeout(() => deathImage.style.display = "none", 30000);
+}
 
 function toggleAudio() {
   if (audioPlaying) {
@@ -179,29 +205,29 @@ function toggleAudio() {
 
 function mantisArt() {
   return `
- _                _     
-  '-.          ,-'     
-     '.      ,'     
-       \\    /     
-       _|__|_     
-      (,\\--/,,)     
-      /\\Y  Y/     
-    ."  \`><'     
-  ."    /|     
- /  /  // .-"'y".     
-_."  /  // / -//-//     
-_."l   /| || / ,// //     
-_."  / ',/ | |," ,// //     
-.-.  _."   ."  ."  | \`  ,//-//     
-//'.'. _."   _."/ |/    "._."// //     
-//  _\\ \\  _,-" _|  Y          ^  ^     
-//_."  \\'\\" /  / \\  \\._     
-//"    _.\\ \\|  /   "----|====-.     
-_.//   _." \\_\\___/        ||     \\\\     
-.-" //_.-" \\_."              ||      \\\\     
-_."   //" \\__,"                 ||       \\\\     
-."   __//>.-"                     ||        "----     
-"---"" //                           \\               
+                                          _                _     
+                                           '-.          ,-'     
+                                              '.      ,'     
+                                                \\    /     
+                                                _|__|_     
+                                               (,\\--/,,)     
+                                               /\\Y  Y/     
+                                             ."  \`><'     
+                                           ."    /|     
+                                          /  /  // .-"'y".     
+                                       _."  /  // / -//-//     
+                                    _."l   /| || / ,// //     
+                                 _."  / ',/ | |," ,// //     
+                     .-.      _."   ."  ."  | \`  ,//-//     
+                    //'.'. _."   _."/ |/    "._."// //     
+                   //  _\\ \\  _,-" _|  Y          ^  ^     
+                  //_."  \\'\\" /  / \\  \\._     
+                 //"    _.\\ \\|  /   "----|====-.     
+              _.//   _." \\_\\___/        ||     \\\\     
+           .-" //_.-" \\_."              ||      \\\\     
+        _."   //" \\__,"                 ||       \\\\     
+      ."   __//>.-"                     ||        "----     
+     "---"" //                           \\               
   `;
 }
 
@@ -221,7 +247,7 @@ function typeWriterEffect(text, callback) {
 }
 
 function startTimer() {
-  clearInterval(timerInterval);
+  if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(updateClock, 1000);
   updateClock();
 }
@@ -230,11 +256,8 @@ function updateClock() {
   const now = Math.floor(Date.now() / 1000);
   let timeLeft = endTime - now;
 
-  if (timeLeft <= 0 || guessesLeft <= 0) {
+  if (timeLeft <= 0 && !gameOver) {
     endGame("SHE WAS CHOSEN. YOU WERE TESTED.<br>AND NOW SHE’S DEAD BECAUSE OF YOUR CURIOSITY.<br>SUMMON ME AGAIN WITH “MANTIS” IF YOU WISH TO PLAY AGAIN.");
-    deathImage.style.display = "block";
-    setTimeout(() => deathImage.style.display = "none", 30000);
-    gameOver = true;
   } else {
     document.getElementById('hrs').textContent = String(Math.floor(timeLeft / 3600)).padStart(2, '0');
     document.getElementById('mins').textContent = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, '0');
@@ -244,18 +267,20 @@ function updateClock() {
 
 function submitAnswer() {
   const ans = document.getElementById('userAnswer').value.trim().toLowerCase();
-
   if (ans === "mantis" && gameOver) {
     resetGame();
+    sendEmail("RESTARTED");
+    startTimer();
     return;
   }
 
-  if (gameOver || guessesLeft <= 0) return;
+  if (!timerInterval || guessesLeft <= 0 || gameOver) return;
 
   if (workplace.includes(ans)) {
     clearInterval(timerInterval);
     typeWriterEffect("WELL DONE. YOU’VE FOUND ME.<br>I’D STILL LIKE TO FIND YOU ONE DAY.<br>WILL YOU REPORT ME TO THE METRO POLICE NOW?<br>" + mantisArt());
     gameOver = true;
+    localStorage.setItem("gameOver", "true");
   } else if (profession.includes(ans)) {
     if (!professionGuessed) {
       professionGuessed = true;
@@ -269,11 +294,14 @@ function submitAnswer() {
     guessesLeft--;
     localStorage.setItem("guessesLeft", guessesLeft);
     guessesEl.textContent = guessesLeft === 1 ? "1 guess" : `${guessesLeft} guesses`;
+    if (guessesLeft === 2) {
+      mantisEl.style.display = "block";
+      mantisEl.textContent = mantisArt();
+    }
     if (guessesLeft <= 0) {
       endGame("SHE WAS CHOSEN. YOU WERE TESTED.<br>AND NOW SHE’S DEAD BECAUSE OF YOUR CURIOSITY.<br>SUMMON ME AGAIN WITH “MANTIS” IF YOU WISH TO PLAY AGAIN.");
       deathImage.style.display = "block";
       setTimeout(() => deathImage.style.display = "none", 30000);
-      gameOver = true;
     } else {
       let warning = (guessesLeft === 1)
         ? "This is your last chance. Can you bear the responsibility of her death?<br><span class='blink'>TICK TOCK. TICK TOCK.</span>"
@@ -286,32 +314,28 @@ function submitAnswer() {
 function endGame(message) {
   clearInterval(timerInterval);
   gameOver = true;
+  localStorage.setItem("gameOver", "true");
   typeWriterEffect(message);
+  deathImage.style.display = "block";
+  setTimeout(() => deathImage.style.display = "none", 30000);
 }
 
 function resetGame() {
   guessesLeft = 3;
   professionGuessed = false;
   gameOver = false;
-  endTime = Math.floor(Date.now() / 1000) + totalTime;
   localStorage.setItem("guessesLeft", guessesLeft);
-  localStorage.setItem("endTime", endTime);
+  localStorage.setItem("endTime", Math.floor(Date.now() / 1000) + totalTime);
+  localStorage.setItem("gameOver", "false");
   document.getElementById('userAnswer').value = "";
   resultEl.innerHTML = "";
   mantisEl.style.display = "none";
   clueEl.style.display = "none";
   deathImage.style.display = "none";
-  startTimer();
 }
 
 window.addEventListener('load', () => {
-  if (!gameOver) {
-    startTimer();
-  } else {
-    endGame("SHE WAS CHOSEN. YOU WERE TESTED.<br>AND NOW SHE’S DEAD BECAUSE OF YOUR CURIOSITY.<br>SUMMON ME AGAIN WITH “MANTIS” IF YOU WISH TO PLAY AGAIN.");
-    deathImage.style.display = "block";
-    setTimeout(() => deathImage.style.display = "none", 30000);
-  }
+  if (!gameOver) startTimer();
   sendEmail("STARTED");
   bgMusic.play().catch(() => {
     console.log("Autoplay blocked; will start on user click.");
