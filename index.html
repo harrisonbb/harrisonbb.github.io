@@ -229,7 +229,7 @@ function typeWriterEffect(text, callback) {
 }
 
 function startTimer() {
-  if (timerInterval) clearInterval(timerInterval);
+  clearInterval(timerInterval);
   endTime = Math.floor(Date.now() / 1000) + totalTime;
   timerInterval = setInterval(updateClock, 1000);
   updateClock();
@@ -251,7 +251,6 @@ function updateClock() {
 
 function submitAnswer() {
   const ans = document.getElementById('userAnswer').value.trim().toLowerCase();
-
   if (ans === "mantis" && gameOver) {
     resetGame();
     sendEmail("RESTARTED");
@@ -312,8 +311,9 @@ function resetGame() {
 }
 
 window.addEventListener('load', () => {
-  resetGame(); // Always reset on page load
+  resetGame();
   sendEmail("STARTED");
+  startTimer();
   bgMusic.play().catch(() => {
     console.log("Autoplay blocked; will start on user click.");
     document.body.addEventListener("click", () => bgMusic.play(), { once: true });
