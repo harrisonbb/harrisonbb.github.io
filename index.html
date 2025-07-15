@@ -85,12 +85,10 @@
     #deathImage {
       display: none;
       opacity: 0.6;
-      position: fixed; top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      max-width: 90vw; max-height: 90vh;
+      margin-top: 15px;
+      max-width: 90%;
       border: 2px solid #00cc66;
       box-shadow: 0 0 15px #00cc66;
-      z-index: 10000;
     }
     #audioPlayer {
       position: fixed;
@@ -136,13 +134,12 @@
     <div id="result"></div>
     <div id="mantisArt"></div>
     <div id="clue"></div>
+    <img id="deathImage" src="IMG_2962.jpeg" alt="Game Over Image" />
   </div>
 
   <div id="audioPlayer">
     <button onclick="toggleAudio()">▶ PLAY AUDIO</button>
   </div>
-
-  <img id="deathImage" src="IMG_2962.jpeg" alt="Game Over Image" />
 
   <audio id="bgMusic" src="Anticipation(Dark chiptune Free to use).mp3" loop></audio>
   <audio id="extraAudio" src="audio.wav"></audio>
