@@ -278,7 +278,7 @@ function updateClock() {
   let timeLeft = endTime - now;
 
   if (timeLeft <= 0 && !gameOver) {
-    endGame("SHE WAS CHOSEN. YOU WERE TESTED.<br>");
+    endGame("SHE WAS CHOSEN. YOU WERE TESTED. NOW SHES DEAD BECAUSE OF YOUR CURIOSITY. WILL YOU REPORT ME TO THE METRO POLICE OR WILL YOU PLAY AGAIN?<br>");
   } else {
     document.getElementById('hrs').textContent = String(Math.floor(timeLeft / 3600)).padStart(2, '0');
     document.getElementById('mins').textContent = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, '0');
