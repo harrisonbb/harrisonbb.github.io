@@ -312,7 +312,7 @@ function submitAnswer() {
     localStorage.setItem("guessesLeft", guessesLeft);
     guessesEl.textContent = guessesLeft === 1 ? "1 guess" : `${guessesLeft} guesses`;
     if (guessesLeft <= 0) {
-    endGame("SHE WAS CHOSEN. YOU WERE TESTED. NOW SHES DEAD BECAUSE OF YOUR CURIOSITY. WILL YOU REPORT ME TO THE METRO POLICE OR WILL YOU PLAY AGAIN?<br>");
+    endGame("SHE WAS CHOSEN. YOU WERE TESTED. NOW SHES DEAD BECAUSE OF YOUR CURIOSITY. WILL YOU REPORT ME TO THE METRO POLICE OR WILL YOU PLAY AGAIN? I HOPE TO MEET YOU ONE DAY. :)<br>");
     } else {
       let warning = (guessesLeft === 1)
         ? "This is your last chance.<br><span class='blink'>TICK TOCK. TICK TOCK.</span>"
