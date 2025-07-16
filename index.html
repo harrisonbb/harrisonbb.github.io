@@ -294,7 +294,7 @@ function submitAnswer() {
 
   if (workplace.includes(ans)) {
     clearInterval(timerInterval);
-    typeWriterEffect("WELL DONE. YOU’VE FOUND ME.<br>");
+    typeWriterEffect("WELL DONE. YOU’VE FOUND ME. NOW ITS MY TURN TO FIND YOU. WILL YOU REPORT ME TO THE METRO POLICE?<br>");
     gameOver = true;
     localStorage.setItem("gameOver", "true");
     playAgainBtn.style.display = "inline-block";
